@@ -153,17 +153,29 @@ document.querySelectorAll("[data-tab]").forEach(button => {
   });
 });
 
-async function checkAdmin(){
-  const {data,error} = await db.from("user_roles")
-    .select("role").eq("user_id",currentUser.id).maybeSingle();
-  if(error){
-    $("adminStatus").textContent="Az adminjog nem ellenőrizhető. Ellenőrizd a user_roles tábla jogosultságait.";
+
+async function checkAdmin() {
+  const { data, error } = await db
+    .from("user_roles")
+    .select("role")
+    .eq("user_id", currentUser.id)
+    .maybeSingle();
+
+  if (error) {
+    $("adminTab").classList.add("hidden");
+    $("adminStatus").textContent =
+      "Adminellenőrzési hiba: " + error.message;
     return;
   }
-  const isAdmin=data?.role==="admin";
-  $("adminTab").classList.toggle("hidden",!isAdmin);
-  $("adminStatus").textContent=isAdmin?"Adminisztrátori fiókkal vagy belépve.":"Ehhez a fiókhoz nincs adminjog.";
+
+  const isAdmin = data?.role === "admin";
+
+  $("adminTab").classList.toggle("hidden", !isAdmin);
+  $("adminStatus").textContent = isAdmin
+    ? "Adminisztrátori fiókkal vagy belépve."
+    : "Ehhez a fiókhoz nincs adminjog.";
 }
+
 
 async function loadRooms(){
   const {data,error}=await db.from("rooms").select("*");
