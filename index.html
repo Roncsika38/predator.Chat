@@ -47,7 +47,7 @@ main{max-width:1200px;margin:20px auto;padding:0 14px}
       <input id="email" type="email" placeholder="E-mail-cím" required autocomplete="email">
       <input id="password" type="password" placeholder="Jelszó (legalább 6 karakter)" minlength="6" required autocomplete="current-password">
       <button type="submit">Bejelentkezés</button>
-      <button type="button" id="register">Új fiók létrehozása</button>
+      <button type="button" id="forgotPassword">Elfelejtett jelszó?</button>
     </form>
     <p id="status"></p>
     <p class="muted">Ha az e-mail megerősítése be van kapcsolva, először nyisd meg a megerősítő levelet.</p>
@@ -137,6 +137,26 @@ $("authform").addEventListener("submit", async e => {
   const {error} = await db.auth.signInWithPassword({email,password});
   if(error) status("Nem sikerült belépni: " + error.message);
 });
+$("forgotPassword").addEventListener("click", async () => {
+  const email = $("email").value.trim();
+
+  if (!email) {
+    status("Először írd be az e-mail-címedet!");
+    return;
+  }
+
+  status("Jelszó-visszaállító e-mail küldése...");
+
+  const { error } = await db.auth.resetPasswordForEmail(email, {
+    redirectTo: location.origin + location.pathname
+  });
+
+  if (error) {
+    status("Hiba: " + error.message);
+  } else {
+    status("Ha a cím regisztrálva van, elküldtük a visszaállító e-mailt.");
+  }
+});  
 
 $("register").addEventListener("click", async () => {
   status("Fiók létrehozása…");
