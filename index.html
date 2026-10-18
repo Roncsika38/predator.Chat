@@ -1,323 +1,272 @@
-<!DOCTYPE html>
+
+<!doctype html>
 <html lang="hu">
 <head>
-<meta charset="UTF-8">
+<meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="theme-color" content="#081225">
 <title>Predator Chat</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
+:root{color-scheme:dark;--bg:#080d19;--panel:#111a2b;--red:#ef233c;--text:#edf2ff;--muted:#9aa9c4}
 *{box-sizing:border-box}
-body{margin:0;background:#081225;color:#eef4ff;font:16px Arial,sans-serif}
-header{background:#101e38;padding:18px;display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;border-bottom:1px solid #263b5c}
-h1{margin:0;color:#62a8ff}
-main{max-width:1100px;margin:20px auto;padding:0 12px}
-.card{background:#111f37;border:1px solid #263b5c;border-radius:14px;padding:16px;margin-bottom:14px}
-input,button,select{font:inherit;padding:12px;border-radius:9px;margin-top:8px}
-input,select{background:#09152a;color:white;border:1px solid #354b6d;width:100%}
-button{background:#2477e8;color:white;border:0;font-weight:bold;cursor:pointer}
-.secondary{background:#354866}
-.danger{background:#a83245}
-.row{display:flex;gap:8px;align-items:center}
-.row input{flex:1;min-width:0}
-.small{font-size:13px;color:#a9bad4}
-#app,#admin{display:none}
-.layout{display:grid;grid-template-columns:250px minmax(0,1fr);gap:14px}
-#messages{height:380px;overflow:auto;background:#09152a;padding:10px;border-radius:9px;margin:12px 0}
-.msg{background:#1c3152;padding:10px;margin:7px 0;border-radius:9px;overflow-wrap:anywhere}
-.meta{font-size:12px;color:#b9cbe5;margin-bottom:5px}
-.room{display:block;width:100%;text-align:left;background:#1b2d4b}
-.status{white-space:pre-wrap;color:#ffd18b}
-#nav{display:none;gap:6px;flex-wrap:wrap}
-#nav button{width:auto}
-@media(max-width:700px){.layout{grid-template-columns:1fr}main{margin:10px auto}.card{padding:12px}#messages{height:45vh}.row.mobile{flex-direction:column;align-items:stretch}.row.mobile button{width:100%}}
+body{margin:0;background:var(--bg);color:var(--text);font:15px Arial,sans-serif}
+header{background:#10192a;border-bottom:2px solid var(--red);padding:18px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+h1{font-size:22px;margin:0}h1 span{color:var(--red)}
+button,input{font:inherit;border-radius:8px;padding:11px;border:1px solid #33415d}
+button{background:var(--red);border:0;color:white;cursor:pointer;font-weight:bold}
+button:disabled{opacity:.5;cursor:not-allowed}
+input{background:#0b1322;color:white;width:100%}
+main{max-width:1200px;margin:20px auto;padding:0 14px}
+.panel{background:var(--panel);border:1px solid #26334c;border-radius:12px;padding:16px;margin-bottom:14px}
+.auth{max-width:430px;margin:40px auto}
+.form{display:grid;gap:10px}
+.tabs,.rooms{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+.tabs button,.rooms button{background:#202c42}
+.tabs button.active,.rooms button.active{background:var(--red)}
+.layout{display:grid;grid-template-columns:220px 1fr;gap:14px}
+#messages{height:55vh;min-height:280px;overflow:auto;display:flex;flex-direction:column;gap:10px;padding:6px}
+.msg{padding:10px 12px;background:#1a2740;border-radius:10px;overflow-wrap:anywhere}
+.msg b{color:#ff596d}.time{color:var(--muted);font-size:11px;margin-left:8px}
+.composer{display:flex;gap:8px;margin-top:12px}.composer input{flex:1;min-width:0}
+.muted{color:var(--muted)}#status{white-space:pre-wrap;color:#ff9aa8}
+.hidden{display:none!important}
+@media(max-width:650px){.layout{grid-template-columns:1fr}#messages{height:48vh}header{align-items:flex-start}.composer{flex-wrap:wrap}.composer button{min-width:80px}}
 </style>
 </head>
 <body>
 <header>
- <div><h1>Predator Chat</h1><div class="small">Magyar közösségi chat · chatbot nélkül</div></div>
- <div id="nav">
-  <button id="chatButton">Chat</button>
-  <button id="adminButton" class="secondary" style="display:none">Adminpanel</button>
-  <button id="logoutButton" class="secondary">Kilépés</button>
- </div>
+  <h1>🔴 Predator <span>Chat</span></h1>
+  <div id="userbar" class="muted">Nincs bejelentkezve</div>
+  <button id="logout" class="hidden">Kilépés</button>
 </header>
+
 <main>
- <section id="auth" class="card">
-  <h2>Belépés / Regisztráció</h2>
-  <p class="small">Ha e-mail-megerősítést kér, nézd meg a postafiókodat.</p>
-  <input id="email" type="email" placeholder="E-mail-cím" autocomplete="email">
-  <input id="password" type="password" placeholder="Jelszó (legalább 6 karakter)" autocomplete="current-password">
-  <div class="row mobile">
-   <button id="registerButton">Regisztráció</button>
-   <button id="loginButton" class="secondary">Belépés</button>
-  </div>
- </section>
-
- <section id="app" class="layout">
-  <aside class="card">
-   <h2>Szobák</h2>
-   <div id="rooms"></div>
-   <hr style="border-color:#263b5c;margin:18px 0">
-   <h3>Privát üzenet</h3>
-   <input id="recipientId" placeholder="Másik tag UUID-azonosítója">
-   <button id="privateButton" class="secondary">Privát beszélgetés</button>
-   <button id="publicButton" class="secondary">Vissza a szobába</button>
-   <p class="small">Privát beszélgetéshez a másik tag UUID-azonosítója kell.</p>
-  </aside>
-  <section class="card">
-   <h2 id="chatTitle">Közös chat</h2>
-   <p id="currentUser" class="small"></p>
-   <div id="messages" aria-live="polite"></div>
-   <form id="sendForm">
-    <div class="row">
-     <input id="message" maxlength="2000" placeholder="Írd meg az üzeneted…" autocomplete="off">
-     <button style="width:100px">Küldés</button>
-    </div>
-   </form>
+  <section id="auth" class="panel auth">
+    <h2>Belépés / Regisztráció</h2>
+    <form id="authform" class="form">
+      <input id="email" type="email" placeholder="E-mail-cím" required autocomplete="email">
+      <input id="password" type="password" placeholder="Jelszó (legalább 6 karakter)" minlength="6" required autocomplete="current-password">
+      <button type="submit">Bejelentkezés</button>
+      <button type="button" id="register">Új fiók létrehozása</button>
+    </form>
+    <p id="status"></p>
+    <p class="muted">Ha az e-mail megerősítése be van kapcsolva, először nyisd meg a megerősítő levelet.</p>
   </section>
- </section>
 
- <section id="admin" class="card">
-  <h2>Adminpanel</h2>
-  <p class="small">Szobák létrehozása és törlése.</p>
-  <div class="row mobile">
-   <input id="newRoom" maxlength="60" placeholder="Új szoba neve">
-   <button id="createRoomButton">Létrehozás</button>
-  </div>
-  <div id="adminRooms"></div>
-  <button id="backButton" class="secondary">Vissza a chathez</button>
- </section>
- <p id="status" class="status" role="status"></p>
+  <section id="app" class="hidden">
+    <nav class="tabs">
+      <button class="active" data-tab="chat">Chat</button>
+      <button data-tab="members">Tagok</button>
+      <button data-tab="private">Üzenetek</button>
+      <button data-tab="profile">Profil</button>
+      <button data-tab="admin" id="adminTab" class="hidden">Admin</button>
+    </nav>
+
+    <section id="chat">
+      <div class="rooms" id="rooms"></div>
+      <div class="layout">
+        <aside class="panel">
+          <h3>Szoba</h3>
+          <div id="roomTitle">Betöltés…</div>
+          <p class="muted">A beszélgetés a bejelentkezett tagoknak jelenik meg.</p>
+        </aside>
+        <div class="panel">
+          <div id="messages"></div>
+          <form id="sendform" class="composer">
+            <input id="message" maxlength="2000" placeholder="Írd ide az üzeneted…" autocomplete="off" required>
+            <button type="submit">Küldés</button>
+          </form>
+          <p id="chatStatus" class="muted"></p>
+        </div>
+      </div>
+    </section>
+
+    <section id="members" class="panel hidden">
+      <h2>Tagok</h2>
+      <p class="muted">A taglista külön profil-tábla és megfelelő adatbázis-jogosultságok beállítása után kapcsolható be.</p>
+    </section>
+
+    <section id="private" class="panel hidden">
+      <h2>Privát üzenetek</h2>
+      <p class="muted">A privát üzenetekhez címzettválasztó és külön adatbázis-jogosultságok is szükségesek. Ez az alapverzió nem jeleníti meg őket nyilvánosan.</p>
+    </section>
+
+    <section id="profile" class="panel hidden">
+      <h2>Profil</h2>
+      <p id="profileEmail"></p>
+    </section>
+
+    <section id="admin" class="panel hidden">
+      <h2>Adminpanel</h2>
+      <p id="adminStatus">Adminjog ellenőrzése…</p>
+      <p class="muted">A fiók adminjogát az adatbázisban tárolt szerepkör határozza meg.</p>
+    </section>
+  </section>
 </main>
 
 <script>
-(function(){
-"use strict";
+const SUPABASE_URL = "https://tmcbfjpwzeafixchsbqt.supabase.co";
+const SUPABASE_KEY = "sb_publishable_qRH3wqaMjDd0gPdvvzElBw_luhhqZLP";
+const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-const SUPABASE_URL="https://tmcbfjpwzeafixchsbqt.supabase.co";
-const SUPABASE_KEY="sb_publishable_qRH3wqaMjDd0gPdvvzElBw_luhhqZLP";
-const db=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
-const $=id=>document.getElementById(id);
+const $ = id => document.getElementById(id);
+let currentUser = null;
+let currentRoom = null;
+let roomList = [];
+let messageChannel = null;
 
-let user=null;
-let isAdmin=false;
-let roomId=null;
-let privateId=null;
-let channel=null;
-let seen=new Set();
+function status(message){ $("status").textContent = message; }
+function chatStatus(message){ $("chatStatus").textContent = message; }
 
-function status(t){$("status").textContent=t||""}
-function errorText(e){return e?.message||String(e||"Ismeretlen hiba")}
-function showPage(page){
- $("auth").style.display=page==="auth"?"block":"none";
- $("app").style.display=page==="app"?"grid":"none";
- $("admin").style.display=page==="admin"?"block":"none";
- $("nav").style.display=user?"flex":"none";
- $("adminButton").style.display=isAdmin?"inline-block":"none";
-}
-function stopChannel(){
- if(channel){db.removeChannel(channel);channel=null}
-}
-function addText(parent,tag,text,className){
- const el=document.createElement(tag);
- el.textContent=text;
- if(className)el.className=className;
- parent.appendChild(el);
- return el;
-}
+$("authform").addEventListener("submit", async e => {
+  e.preventDefault();
+  status("Bejelentkezés…");
+  const email = $("email").value.trim();
+  const password = $("password").value;
+  const {error} = await db.auth.signInWithPassword({email,password});
+  if(error) status("Nem sikerült belépni: " + error.message);
+});
 
-async function register(){
- const email=$("email").value.trim();
- const password=$("password").value;
- if(!email||password.length<6)return status("Adj meg e-mail-címet és legalább 6 karakteres jelszót.");
- status("Regisztráció folyamatban…");
- const {data,error}=await db.auth.signUp({email,password});
- if(error)return status("Regisztrációs hiba: "+errorText(error));
- if(data.session){user=data.user;await afterLogin()}
- else status("Regisztráció elküldve. Ha szükséges, erősítsd meg az e-mail-címedet.");
-}
+$("register").addEventListener("click", async () => {
+  status("Fiók létrehozása…");
+  const email = $("email").value.trim();
+  const password = $("password").value;
+  if(!email || password.length < 6){
+    status("Adj meg e-mail-címet és legalább 6 karakteres jelszót.");
+    return;
+  }
+  const {error} = await db.auth.signUp({email,password});
+  status(error ? "Regisztrációs hiba: " + error.message :
+    "Regisztráció elküldve. Ha megerősítő levelet kapsz, nyisd meg azt.");
+});
 
-async function login(){
- const email=$("email").value.trim();
- const password=$("password").value;
- if(!email||!password)return status("Töltsd ki az e-mail- és jelszómezőt.");
- status("Belépés folyamatban…");
- const {data,error}=await db.auth.signInWithPassword({email,password});
- if(error)return status("Belépési hiba: "+errorText(error));
- user=data.user;
- await afterLogin();
-}
+$("logout").addEventListener("click", async () => {
+  await db.auth.signOut();
+});
 
-async function afterLogin(){
- $("currentUser").textContent="Belépve: "+(user.email||user.id);
- const {data:roles,error}=await db.from("user_roles").select("role").eq("user_id",user.id);
- if(error){
-  isAdmin=false;
-  status("Belépés sikerült. Az adminjogosultságot nem sikerült ellenőrizni: "+errorText(error));
- }else isAdmin=(roles||[]).some(r=>r.role==="admin");
- showPage("app");
- await loadRooms();
-}
+document.querySelectorAll("[data-tab]").forEach(button => {
+  button.addEventListener("click", () => {
+    document.querySelectorAll("[data-tab]").forEach(b=>b.classList.toggle("active",b===button));
+    ["chat","members","private","profile","admin"].forEach(id=>$(id).classList.add("hidden"));
+    const tab=button.dataset.tab;
+    $(tab).classList.remove("hidden");
+  });
+});
 
-async function logout(){
- stopChannel();
- await db.auth.signOut();
- user=null;isAdmin=false;roomId=null;privateId=null;
- showPage("auth");
- status("Kiléptél.");
+async function checkAdmin(){
+  const {data,error} = await db.from("user_roles")
+    .select("role").eq("user_id",currentUser.id).maybeSingle();
+  if(error){
+    $("adminStatus").textContent="Az adminjog nem ellenőrizhető. Ellenőrizd a user_roles tábla jogosultságait.";
+    return;
+  }
+  const isAdmin=data?.role==="admin";
+  $("adminTab").classList.toggle("hidden",!isAdmin);
+  $("adminStatus").textContent=isAdmin?"Adminisztrátori fiókkal vagy belépve.":"Ehhez a fiókhoz nincs adminjog.";
 }
 
 async function loadRooms(){
- const {data,error}=await db.from("rooms").select("id,name").order("name");
- if(error)return status("Szobák betöltési hibája: "+errorText(error));
- const list=$("rooms");
- list.replaceChildren();
- (data||[]).forEach(r=>{
-  const b=addText(list,"button",r.name,"room");
-  b.onclick=()=>{roomId=r.id;privateId=null;loadMessages()};
- });
- if(!data||!data.length){
-  status("Nincs szoba. Az adatbázisban hozz létre egy Általános szobát.");
-  return;
- }
- if(!roomId||(data||[]).every(r=>r.id!==roomId))roomId=data[0].id;
- await loadMessages();
+  const {data,error}=await db.from("rooms").select("*");
+  if(error){
+    chatStatus("Nem tölthetők be a szobák: "+error.message);
+    return;
+  }
+  roomList=data||[];
+  $("rooms").replaceChildren();
+  roomList.forEach(room=>{
+    const name=room.name || room.title || room.slug || "Szoba";
+    const button=document.createElement("button");
+    button.textContent=name;
+    button.addEventListener("click",()=>selectRoom(room));
+    $("rooms").append(button);
+  });
+  if(!currentRoom && roomList.length) selectRoom(roomList[0]);
+}
+
+function selectRoom(room){
+  currentRoom=room;
+  const name=room.name || room.title || room.slug || "Szoba";
+  $("roomTitle").textContent=name;
+  document.querySelectorAll("#rooms button").forEach(b=>b.classList.toggle("active",b.textContent===name));
+  if(messageChannel){db.removeChannel(messageChannel);messageChannel=null;}
+  loadMessages();
+  messageChannel=db.channel("room-"+room.id)
+    .on("postgres_changes",{event:"INSERT",schema:"public",table:"messages",filter:"room_id=eq."+room.id},
+      payload=>renderMessage(payload.new))
+    .subscribe();
+}
+
+function renderMessage(m){
+  if(!m || String(m.room_id)!==String(currentRoom?.id)) return;
+  if($("messages").querySelector('[data-id="'+CSS.escape(String(m.id))+'"]')) return;
+  const item=document.createElement("div");
+  item.className="msg";
+  item.dataset.id=String(m.id);
+  const name=document.createElement("b");
+  name.textContent=String(m.sender_id)===String(currentUser.id)?"Te":"Tag";
+  const time=document.createElement("span");
+  time.className="time";
+  time.textContent=m.created_at?new Date(m.created_at).toLocaleString("hu-HU"):"";
+  const body=document.createElement("div");
+  body.textContent=m.body || "";
+  item.append(name,time,body);
+  $("messages").append(item);
+  $("messages").scrollTop=$("messages").scrollHeight;
 }
 
 async function loadMessages(){
- stopChannel();
- seen=new Set();
- $("messages").replaceChildren();
- if(!user)return;
- let query=db.from("messages").select("id,sender_id,room_id,recipient_id,body,content,created_at")
-  .order("created_at",{ascending:true}).limit(100);
- if(privateId){
-  query=query.is("room_id",null).or(
-   "and(sender_id.eq."+user.id+",recipient_id.eq."+privateId+"),and(sender_id.eq."+privateId+",recipient_id.eq."+user.id+")"
-  );
-  $("chatTitle").textContent="Privát beszélgetés";
- }else{
-  if(!roomId)return;
-  query=query.eq("room_id",roomId);
-  $("chatTitle").textContent="Közös chat";
- }
- const {data,error}=await query;
- if(error)return status("Üzenetbetöltési hiba: "+errorText(error));
- (data||[]).forEach(addMessage);
- channel=db.channel("predator-"+(privateId||roomId))
- .on("postgres_changes",{event:"INSERT",schema:"public",table:"messages"},payload=>{
-  const m=payload.new;
-  if(privateId){
-   if((m.sender_id===user.id&&m.recipient_id===privateId)||
-      (m.sender_id===privateId&&m.recipient_id===user.id))addMessage(m);
-  }else if(m.room_id===roomId)addMessage(m);
- }).subscribe();
+  $("messages").replaceChildren();
+  if(!currentRoom)return;
+  const {data,error}=await db.from("messages")
+    .select("id,sender_id,room_id,body,created_at")
+    .eq("room_id",currentRoom.id)
+    .is("recipient_id",null)
+    .order("created_at",{ascending:true}).limit(100);
+  if(error){chatStatus("Nem tölthetők be az üzenetek: "+error.message);return;}
+  (data||[]).forEach(renderMessage);
+  chatStatus("");
 }
 
-function addMessage(m){
- if(!m||seen.has(m.id))return;
- seen.add(m.id);
- const box=$("messages");
- const item=document.createElement("div");
- item.className="msg";
- const date=m.created_at?new Date(m.created_at).toLocaleString("hu-HU"):"";
- addText(item,"div",(m.sender_id===user.id?"Te":"Tag")+" · "+date,"meta");
- addText(item,"div",m.body??m.content??"");
- box.appendChild(item);
- box.scrollTop=box.scrollHeight;
-}
-
-async function sendMessage(event){
- event.preventDefault();
- const body=$("message").value.trim();
- if(!body||!user)return;
- if(!privateId&&!roomId)return status("Válassz egy szobát.");
- const row={sender_id:user.id,room_id:privateId?null:roomId,recipient_id:privateId||null,body};
- status("Üzenet küldése…");
- const {error}=await db.from("messages").insert(row);
- if(error)return status("Az üzenet nem ment el: "+errorText(error));
- $("message").value="";
- status("Üzenet elküldve.");
- await loadMessages();
-}
-
-async function openPrivate(){
- const id=$("recipientId").value.trim();
- if(!id)return status("Add meg a másik tag UUID-azonosítóját.");
- if(id===user.id)return status("Saját magadnak nem küldhetsz privát üzenetet.");
- privateId=id;roomId=null;
- await loadMessages();
-}
-
-async function createRoom(){
- if(!isAdmin)return status("Ehhez adminjogosultság szükséges.");
- const name=$("newRoom").value.trim();
- if(!name)return status("Írd be a szoba nevét.");
- const {error}=await db.from("rooms").insert({name});
- if(error)return status("Szobalétrehozási hiba: "+errorText(error));
- $("newRoom").value="";
- status("Szoba létrehozva.");
- await loadRooms();
- await renderAdminRooms();
-}
-
-async function renderAdminRooms(){
- if(!isAdmin)return;
- const {data,error}=await db.from("rooms").select("id,name").order("name");
- if(error)return status("Adminhiba: "+errorText(error));
- const list=$("adminRooms");
- list.replaceChildren();
- (data||[]).forEach(r=>{
-  const row=document.createElement("div");
-  row.className="row";
-  addText(row,"span",r.name);
-  const b=addText(row,"button","Törlés","danger");
-  b.style.width="100px";
-  b.onclick=async()=>{
-   if(!confirm("Biztosan törlöd ezt a szobát?"))return;
-   const {error}=await db.from("rooms").delete().eq("id",r.id);
-   if(error)return status("Törlési hiba: "+errorText(error));
-   if(roomId===r.id)roomId=null;
-   status("Szoba törölve.");
-   await loadRooms();
-   await renderAdminRooms();
-  };
-  list.appendChild(row);
- });
-}
-
-$("registerButton").onclick=register;
-$("loginButton").onclick=login;
-$("logoutButton").onclick=logout;
-$("sendForm").addEventListener("submit",sendMessage);
-$("privateButton").onclick=openPrivate;
-$("publicButton").onclick=async()=>{privateId=null;await loadRooms()};
-$("chatButton").onclick=()=>showPage("app");
-$("adminButton").onclick=async()=>{
- if(!isAdmin)return status("Nincs adminjogosultságod.");
- showPage("admin");
- await renderAdminRooms();
-};
-$("backButton").onclick=()=>showPage("app");
-$("createRoomButton").onclick=createRoom;
-
-db.auth.onAuthStateChange((event,session)=>{
- if(session?.user&&!user){
-  user=session.user;
-  setTimeout(()=>afterLogin(),0);
- }
- if(!session?.user&&user){
-  user=null;isAdmin=false;stopChannel();showPage("auth");
- }
+$("sendform").addEventListener("submit",async e=>{
+  e.preventDefault();
+  if(!currentUser || !currentRoom)return;
+  const body=$("message").value.trim();
+  if(!body)return;
+  const sendButton=$("sendform").querySelector("button");
+  sendButton.disabled=true;
+  const {error}=await db.from("messages").insert({
+    room_id:currentRoom.id,
+    sender_id:currentUser.id,
+    body
+  });
+  sendButton.disabled=false;
+  if(error){chatStatus("Az üzenet nem ment ki: "+error.message);return;}
+  $("message").value="";
+  chatStatus("");
 });
 
-db.auth.getSession().then(({data,error})=>{
- if(error)return status(errorText(error));
- if(data.session?.user){user=data.session.user;afterLogin()}
- else showPage("auth");
+async function showSession(session){
+  currentUser=session?.user||null;
+  const loggedIn=!!currentUser;
+  $("auth").classList.toggle("hidden",loggedIn);
+  $("app").classList.toggle("hidden",!loggedIn);
+  $("logout").classList.toggle("hidden",!loggedIn);
+  $("userbar").textContent=loggedIn?currentUser.email:"Nincs bejelentkezve";
+  if(!loggedIn){
+    if(messageChannel){db.removeChannel(messageChannel);messageChannel=null;}
+    currentRoom=null;
+    $("messages").replaceChildren();
+    return;
+  }
+  $("profileEmail").textContent=currentUser.email||"";
+  await checkAdmin();
+  await loadRooms();
+}
+
+db.auth.onAuthStateChange((_event,session)=>{
+  setTimeout(()=>showSession(session),0);
 });
-})();
+db.auth.getSession().then(({data})=>showSession(data.session));
 </script>
 </body>
 </html>
