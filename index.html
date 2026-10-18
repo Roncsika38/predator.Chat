@@ -1,53 +1,36 @@
+for insert to authenticated with check (public.is_predator_admin());
+create policy "rooms admin delete" on public.rooms
+for delete to authenticated using (public.is_predator_admin());
 
-<!DOCTYPE html>
-<html lang="hu">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Predator Chat</title>
-<style>
-*{box-sizing:border-box}
-body{margin:0;background:#081225;color:#eef4ff;font-family:Arial,sans-serif}
-header{padding:20px;background:#101e38;border-bottom:1px solid #263b5c}
-h1{margin:0;color:#62a8ff;font-size:25px}
-main{max-width:800px;margin:30px auto;padding:16px}
-.card{background:#111f37;border:1px solid #263b5c;border-radius:15px;padding:20px;margin-bottom:18px}
-input,button{font:inherit;border-radius:9px;padding:12px;width:100%;margin-top:10px}
-input{background:#09152a;border:1px solid #354b6d;color:white}
-button{background:#2477e8;color:white;border:0;cursor:pointer;font-weight:bold}
-#chat{display:none}
-#messages{height:260px;overflow:auto;background:#09152a;padding:12px;border-radius:9px;overflow-wrap:anywhere}
-.msg{padding:8px;margin:6px 0;background:#1c3152;border-radius:8px}
-small{color:#a9bad4}
-</style>
-</head>
-<body>
-<header><h1>Predator Chat</h1><small>Magyar közösségi chat</small></header>
-<main>
-<section class="card" id="login">
-<h2>Belépés vagy regisztráció</h2>
-<p><small>Az adatbázis csatlakoztatását a következő lépésben végezzük el.</small></p>
-<input id="email" type="email" placeholder="E-mail-cím">
-<input id="password" type="password" placeholder="Jelszó (legalább 8 karakter)">
-<button id="register">Regisztráció</button>
-<button id="signin">Belépés</button>
-<p id="status" role="status"></p>
-</section>
-<section class="card" id="chat">
-<h2>Általános szoba</h2>
-<div id="messages"></div>
-<form id="sendform">
-<input id="message" maxlength="1000" placeholder="Írd ide az üzeneted..." required>
-<button>Küldés</button>
-</form>
-<button id="logout">Kilépés</button>
-</section>
-</main>
-<script>
-document.getElementById('register').onclick=()=>document.getElementById('status').textContent='A regisztráció az adatbázis csatlakoztatása után lesz elérhető.';
-document.getElementById('signin').onclick=()=>document.getElementById('status').textContent='A belépés az adatbázis csatlakoztatása után lesz elérhető.';
-document.getElementById('sendform').onsubmit=e=>{e.preventDefault();};
-document.getElementById('logout').onclick=()=>{document.getElementById('chat').style.display='none';document.getElementById('login').style.display='block';};
-</script>
-</body>
-</html>
+create policy "messages read authenticated" on public.messages
+for select to authenticated using (true);
+create policy "messages insert own" on public.messages
+for insert to authenticated with check (auth.uid() = user_id);
+
+create policy "roles read own or admin" on public.user_roles
+for select to authenticated using (auth.uid() = user_id or public.is_predator_admin());
+
+insert into public.rooms (name) values ('Általános')
+on conflict (name) do nothing;
+
+-- Biztonságos szerepkiosztás: csak az itt megadott, már regisztrált e-mail admin.
+-- Cseréld ki a saját, tulajdonosként használt e-mail-címedre.
+insert into public.user_roles (user_id, role)
+select id, 'admin' from auth.users where lower(email) = lower('roncsika635@gmail.com')
+on conflict (user_id) do update set role = 'admin';
+
+-- Üzenetek realtime frissítéséhez: ha már szerepel a publicationben, ez a blokk nem tesz hozzá újra.
+do $$
+begin
+  if not exists (
+    select 1
+    from pg_publication_tables
+    where pubname = 'supabase_realtime'
+      and schemaname = 'public'
+      and tablename = 'messages'
+  ) then
+    alter publication supabase_realtime add table public.messages;
+  end if;
+exception when undefined_object then
+  raise notice 'A supabase_realtime publication nem található; engedélyezd a Realtime-ot a Supabase Dashboardban.';
+end $$;
