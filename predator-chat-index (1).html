@@ -118,19 +118,19 @@ small{color:var(--muted)}@media(max-width:520px){main{margin:12px auto;padding:0
     const d=document.createElement("div");d.className="msg";
     const meta=document.createElement("div");meta.className="meta";
     meta.textContent=(m.user_id===user?.id?"Te":"Chat-tag")+" · "+(m.created_at?new Date(m.created_at).toLocaleString("hu-HU"):"");
-    const body=document.createElement("div");body.textContent=m.content||"";
+    const body=document.createElement("div");body.textContent=m.body||"";
     d.append(meta,body);$("messages").append(d);$("messages").scrollTop=$("messages").scrollHeight;
   }
   async function loadMessages(){
     stopRealtime();roomId=$("room").value;ids=new Set();$("messages").replaceChildren();if(!roomId||!user)return;
-    const {data,error}=await client.from("messages").select("id,room_id,user_id,content,created_at").eq("room_id",roomId).order("created_at",{ascending:true}).limit(100);
+    const {data,error}=await client.from("messages").select(sender_id,body,created_at).eq("room_id",roomId).order("created_at",{ascending:true}).limit(100);
     if(error){say("Üzenetek betöltési hibája: "+explainFetchError(error)+" (RLS/jogosultság ellenőrzendő).");return;}
     (data||[]).forEach(addMessage);
     channel=client.channel("predator-room-"+roomId).on("postgres_changes",{event:"INSERT",schema:"public",table:"messages",filter:"room_id=eq."+roomId},p=>addMessage(p.new)).subscribe(state=>{if(state==="CHANNEL_ERROR")say("Realtime hiba: a Supabase Database > Replication beállításainál engedélyezni kell a messages táblát.");});
   }
   async function sendMessage(e){
     e.preventDefault();const content=$("message").value.trim();if(!content||!user||!roomId)return;
-    const {error}=await client.from("messages").insert({room_id:roomId,user_id:user.id,content});
+    const {error}=await client.from("messages").insert({room_id:roomId,sender_id:user.id,body:content});
     if(error)return say("Az üzenet nem ment el: "+explainFetchError(error));
     $("message").value="";say("");
   }
