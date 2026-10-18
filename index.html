@@ -91,8 +91,21 @@ main{max-width:1200px;margin:20px auto;padding:0 14px}
       <p class="muted">A privát üzenetekhez címzettválasztó és külön adatbázis-jogosultságok is szükségesek. Ez az alapverzió nem jeleníti meg őket nyilvánosan.</p>
     </section>
 
-    <h2>Profil</h2>
-<p id="profileEmail"></p>
+
+<section id="profile" class="panel hidden">
+  <h2>Profilom</h2>
+  <img id="avatarPreview"
+       src="https://placehold.co/120x120?text=Profil"
+       alt="Profilkép"
+       width="120" height="120"
+       style="width:120px;height:120px;object-fit:cover;border-radius:50%;display:block;margin-bottom:12px">
+
+  <label for="avatarFile">Profilkép kiválasztása</label>
+  <input id="avatarFile" type="file" accept="image/png,image/jpeg,image/webp,image/gif">
+  <button type="button" id="uploadAvatar">Profilkép feltöltése</button>
+  <p id="avatarStatus"></p>
+  <p id="profileEmail"></p>
+</section>
 
     <section id="admin" class="panel hidden">
       <h2>Adminpanel</h2>
