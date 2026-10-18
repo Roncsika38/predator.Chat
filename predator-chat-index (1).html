@@ -1,0 +1,165 @@
+<!doctype html>
+<html lang="hu">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Predator Chat</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root{color-scheme:dark;--bg:#081225;--panel:#111f37;--line:#263b5c;--blue:#2477e8;--muted:#a9bad4}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:#eef4ff;font:16px Arial,sans-serif}
+header{padding:18px 22px;background:#101e38;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+h1{margin:0;color:#62a8ff;font-size:25px}header p{margin:5px 0 0;color:#c8d8f2}
+main{max-width:960px;margin:24px auto;padding:0 14px}.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px;margin-bottom:16px}
+input,button,select{font:inherit;border-radius:9px;padding:12px;width:100%;margin-top:9px}
+input,select{background:#09152a;color:white;border:1px solid #354b6d}button{background:var(--blue);color:white;border:0;font-weight:bold;cursor:pointer}
+button:disabled{opacity:.55;cursor:wait}.secondary{background:#354866}.danger{background:#a83245}
+.row{display:flex;gap:8px;align-items:center}.row input{flex:1;min-width:0}.row button{width:125px;flex-shrink:0}
+.muted{color:var(--muted);font-size:14px}.status{white-space:pre-wrap;line-height:1.5}.status:empty{display:none}
+#app,#admin{display:none}#messages{height:350px;overflow:auto;background:#09152a;padding:10px;border-radius:9px;margin-top:12px}
+.msg{padding:10px;margin:7px 0;background:#1c3152;border-radius:8px;overflow-wrap:anywhere}.meta{font-size:12px;color:#b9cbe5;margin-bottom:5px}
+.nav{display:flex;gap:8px;flex-wrap:wrap}.nav button{width:auto}.roomrow{display:flex;gap:8px;align-items:center;margin-top:8px}.roomrow span{flex:1;overflow-wrap:anywhere}.roomrow button{width:auto;min-width:95px}
+small{color:var(--muted)}@media(max-width:520px){main{margin:12px auto;padding:0 9px}.card{padding:13px}#messages{height:48vh}.row{gap:5px}.row button{width:92px}.roomrow{align-items:stretch}.roomrow button{min-width:75px;padding:9px}}
+</style>
+</head>
+<body>
+<header><div><h1>Predator Chat</h1><p>Magyar közösségi chat · chatbot nélkül</p></div><div id="nav" class="nav" style="display:none"><button id="showChat">Chat</button><button id="showAdmin" class="secondary" style="display:none">Adminpanel</button><button id="logout" class="secondary">Kilépés</button></div></header>
+<main>
+<section id="auth" class="card">
+<h2>Belépés vagy regisztráció</h2><p class="muted">Használj érvényes e-mail-címet. Ha e-mail-megerősítés szükséges, nézd meg a postaládádat.</p>
+<input id="email" type="email" placeholder="E-mail-cím" autocomplete="email">
+<input id="password" type="password" placeholder="Jelszó (legalább 6 karakter)" autocomplete="current-password">
+<div class="row"><button id="register">Regisztráció</button><button id="login" class="secondary">Belépés</button></div>
+</section>
+<section id="app" class="card">
+<div class="row" style="justify-content:space-between"><div><h2 style="margin:0">Közös chat</h2><p id="who" class="muted"></p></div></div>
+<label for="room">Szoba</label><select id="room"><option value="">Szobák betöltése…</option></select>
+<div id="messages" aria-live="polite"></div>
+<form id="sendForm" class="row"><input id="message" maxlength="2000" placeholder="Írd meg az üzeneted…" autocomplete="off"><button type="submit">Küldés</button></form>
+</section>
+<section id="admin" class="card">
+<h2>Adminpanel</h2><p class="muted">Szobák kezelése. Az adatbázis ellenőrzi, hogy valóban admin vagy-e.</p>
+<div class="row"><input id="newRoom" maxlength="60" placeholder="Új szoba neve"><button id="createRoom">Szoba létrehozása</button></div>
+<div id="roomAdminList"></div>
+</section>
+<p id="status" class="status" role="status"></p>
+</main>
+<script>
+(() => {
+  // Supabase Settings > API Keys > Publishable key.
+  // Csak a publikus sb_publishable_ kulcs használható itt, Secret key soha.
+  const SUPABASE_URL = "https://tmcbfjpwzeafixchsbqt.supabase.co";
+  const SUPABASE_KEY = "sb_publishable_qRH3wqaMjDd0gPdvvzElBw_luhhqZLP";
+  const $ = id => document.getElementById(id);
+  const say = text => $("status").textContent = text || "";
+  if (!window.supabase) { say("Nem töltődött be a Supabase klienskönyvtár. Ellenőrizd az internetkapcsolatot, majd frissítsd az oldalt."); return; }
+  if (SUPABASE_KEY.includes("IDE_MASOLD")) {
+    say("Még hiányzik a Publishable key. A Supabase API Keys oldalán másold ki a sb_publishable_ kezdetű kulcsot, és illeszd a kódba.");
+  }
+  const client = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+  let user = null, roomId = null, channel = null, ids = new Set(), isAdmin = false;
+  function stopRealtime(){if(channel){client.removeChannel(channel);channel=null;}}
+  function show(userObj){
+    user=userObj;
+    $("auth").style.display=user?"none":"block";
+    $("nav").style.display=user?"flex":"none";
+    $("app").style.display=user?"block":"none";
+    $("admin").style.display="none";
+    $("who").textContent=user?"Belépve: "+user.email:"";
+    if(!user){stopRealtime();isAdmin=false;$("showAdmin").style.display="none";}
+  }
+  function explainFetchError(e){
+    const m=e && e.message ? e.message : String(e||"Ismeretlen hiba");
+    if(m.toLowerCase().includes("failed to fetch") || m.toLowerCase().includes("fetch")){
+      return "Nem érhető el a Supabase. Ellenőrizd, hogy a projekt URL-je és a Publishable key pontos-e, a projekt aktív-e, és van-e internetkapcsolat. A böngészőben ne használj Secret key-t.";
+    }
+    return m;
+  }
+  async function register(){
+    const email=$("email").value.trim(), password=$("password").value;
+    if(SUPABASE_KEY.includes("IDE_MASOLD"))return say("Először illeszd be a valódi Publishable key-t a kódba.");
+    if(!email||password.length<6)return say("Adj meg érvényes e-mail-címet és legalább 6 karakteres jelszót.");
+    say("Regisztráció folyamatban…");
+    try{
+      const {data,error}=await client.auth.signUp({email,password,options:{emailRedirectTo:location.origin+location.pathname}});
+      if(error)throw error;
+      if(data.session){show(data.user);say("Sikeres regisztráció.");await loadRooms();}
+      else say("A regisztráció elküldve. Ellenőrizd az e-mailjeidet, erősítsd meg a címedet, majd jelentkezz be.");
+    }catch(e){say("Regisztrációs hiba: "+explainFetchError(e));}
+  }
+  async function login(){
+    const email=$("email").value.trim(),password=$("password").value;
+    if(SUPABASE_KEY.includes("IDE_MASOLD"))return say("Először illeszd be a valódi Publishable key-t a kódba.");
+    if(!email||!password)return say("Töltsd ki az e-mail- és jelszómezőt.");
+    say("Belépés folyamatban…");
+    try{const {data,error}=await client.auth.signInWithPassword({email,password});if(error)throw error;show(data.user);await loadRooms();say("Sikeres belépés.");}
+    catch(e){say("Belépési hiba: "+explainFetchError(e));}
+  }
+  async function logout(){try{const {error}=await client.auth.signOut();if(error)throw error;show(null);say("Kiléptél.");}catch(e){say("Kilépési hiba: "+explainFetchError(e));}}
+  async function checkAdmin(){
+    isAdmin=false;
+    const {data,error}=await client.from("user_roles").select("role").eq("user_id",user.id).maybeSingle();
+    if(error){$("showAdmin").style.display="none";return;}
+    isAdmin=data?.role==="admin";
+    $("showAdmin").style.display=isAdmin?"inline-block":"none";
+  }
+  async function loadRooms(){
+    if(!user)return;
+    const {data,error}=await client.from("rooms").select("id,name").order("name");
+    if(error){say("Szobák betöltési hibája: "+explainFetchError(error)+" (RLS/jogosultság vagy tábla beállítása is lehet).");return;}
+    const s=$("room");s.replaceChildren();
+    (data||[]).forEach(r=>{const o=document.createElement("option");o.value=r.id;o.textContent=r.name;s.append(o);});
+    if(!data||!data.length){say("Nincs szoba. Az adminpanelben hozz létre egyet, vagy futtasd az SQL beállítást.");return;}
+    if(!data.some(r=>r.id===roomId))roomId=data[0].id;
+    s.value=roomId;await loadMessages();await checkAdmin();
+  }
+  function addMessage(m){
+    if(!m||ids.has(m.id))return;ids.add(m.id);
+    const d=document.createElement("div");d.className="msg";
+    const meta=document.createElement("div");meta.className="meta";
+    meta.textContent=(m.user_id===user?.id?"Te":"Chat-tag")+" · "+(m.created_at?new Date(m.created_at).toLocaleString("hu-HU"):"");
+    const body=document.createElement("div");body.textContent=m.content||"";
+    d.append(meta,body);$("messages").append(d);$("messages").scrollTop=$("messages").scrollHeight;
+  }
+  async function loadMessages(){
+    stopRealtime();roomId=$("room").value;ids=new Set();$("messages").replaceChildren();if(!roomId||!user)return;
+    const {data,error}=await client.from("messages").select("id,room_id,user_id,content,created_at").eq("room_id",roomId).order("created_at",{ascending:true}).limit(100);
+    if(error){say("Üzenetek betöltési hibája: "+explainFetchError(error)+" (RLS/jogosultság ellenőrzendő).");return;}
+    (data||[]).forEach(addMessage);
+    channel=client.channel("predator-room-"+roomId).on("postgres_changes",{event:"INSERT",schema:"public",table:"messages",filter:"room_id=eq."+roomId},p=>addMessage(p.new)).subscribe(state=>{if(state==="CHANNEL_ERROR")say("Realtime hiba: a Supabase Database > Replication beállításainál engedélyezni kell a messages táblát.");});
+  }
+  async function sendMessage(e){
+    e.preventDefault();const content=$("message").value.trim();if(!content||!user||!roomId)return;
+    const {error}=await client.from("messages").insert({room_id:roomId,user_id:user.id,content});
+    if(error)return say("Az üzenet nem ment el: "+explainFetchError(error));
+    $("message").value="";say("");
+  }
+  async function createRoom(){
+    const name=$("newRoom").value.trim();if(!name)return say("Írd be a szoba nevét.");
+    const {error}=await client.from("rooms").insert({name});
+    if(error)return say("Szoba létrehozási hiba: "+explainFetchError(error));
+    $("newRoom").value="";say("Szoba létrehozva.");await loadRooms();await renderAdminRooms();
+  }
+  async function renderAdminRooms(){
+    if(!isAdmin)return;
+    const {data,error}=await client.from("rooms").select("id,name").order("name");
+    if(error)return say("Admin szobalista hiba: "+error.message);
+    const list=$("roomAdminList");list.replaceChildren();
+    (data||[]).forEach(r=>{
+      const row=document.createElement("div");row.className="roomrow";
+      const label=document.createElement("span");label.textContent=r.name;
+      const del=document.createElement("button");del.className="danger";del.textContent="Törlés";
+      del.onclick=async()=>{if(!confirm("Biztosan törlöd ezt a szobát és az adatbázis által kapcsolt üzeneteit?"))return;const {error}=await client.from("rooms").delete().eq("id",r.id);if(error)say("Törlési hiba: "+error.message);else{say("Szoba törölve.");await loadRooms();await renderAdminRooms();}};
+      row.append(label,del);list.append(row);
+    });
+  }
+  async function openAdmin(){if(!isAdmin)return say("Ehhez admin jogosultság szükséges.");$("app").style.display="none";$("admin").style.display="block";await renderAdminRooms();}
+  $("register").onclick=register;$("login").onclick=login;$("logout").onclick=logout;
+  $("room").onchange=loadMessages;$("sendForm").onsubmit=sendMessage;$("createRoom").onclick=createRoom;
+  $("showChat").onclick=()=>{$("admin").style.display="none";$("app").style.display="block";};
+  $("showAdmin").onclick=openAdmin;
+  client.auth.onAuthStateChange((_event,session)=>{show(session?.user||null);if(session?.user)setTimeout(loadRooms,0);});
+  client.auth.getSession().then(({data,error})=>{if(error)say(error.message);show(data.session?.user||null);if(data.session)loadRooms();});
+})();
+</script>
+</body></html>
