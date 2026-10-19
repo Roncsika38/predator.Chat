@@ -148,7 +148,7 @@ $("forgotPassword").addEventListener("click", async () => {
   status("Jelszó-visszaállító e-mail küldése...");
 
   const { error } = await db.auth.resetPasswordForEmail(email, {
-    redirectTo: location.origin + location.pathname
+    redirectTo:"https://roncsika38.github.io/predator.Chat/",
   });
 
   if (error) {
