@@ -306,9 +306,34 @@ async function showSession(session){
   await loadRooms();
 }
 
-db.auth.onAuthStateChange((_event,session)=>{
-  setTimeout(()=>showSession(session),0);
+
+db.auth.onAuthStateChange((_event, session) => {
+  setTimeout(async () => {
+    await showSession(session);
+
+    if (_event === "PASSWORD_RECOVERY") {
+      const newPassword = prompt(
+        "Írd be az új jelszavadat (legalább 6 karakter):"
+      );
+
+      if (!newPassword || newPassword.length < 6) {
+        alert("Adj meg legalább 6 karakteres új jelszót!");
+        return;
+      }
+
+      const { error } = await db.auth.updateUser({
+        password: newPassword
+      });
+
+      if (error) {
+        alert("Hiba: " + error.message);
+      } else {
+        alert("Sikerült megváltoztatni a jelszót!");
+      }
+    }
+  }, 0);
 });
+
 db.auth.getSession().then(({data})=>showSession(data.session));
 </script>
 </body>
