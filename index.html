@@ -132,7 +132,7 @@ $('logout').addEventListener('click',async()=>{await db.auth.signOut()});
 document.querySelectorAll('[data-tab]').forEach(button=>{button.addEventListener('click',()=>{document.querySelectorAll('[data-tab]').forEach(b=>b.classList.toggle('active',b===button));['chat','members','private','profile','admin'].forEach(id=>$(id).classList.add('hidden'));$(button.dataset.tab).classList.remove('hidden')})});
 const OWNER_USER_ID='a25e2ffd-5f5c-4972-894d-7bfae6f879b4';
 async function checkAdmin(){
-  const {data,error}=await db.from('user_roles').select('role').eq('user_id',currentUser.id).maybeSingle();
+  const {data,error}=await db.from('chat_roles').select('role').eq('user_id',currentUser.id).maybeSingle();
   if(error){$('adminTab').classList.add('hidden');$('roomAdminTools').classList.add('hidden');$('roleAdminTools').classList.add('hidden');$('adminStatus').textContent='Adminellenőrzési hiba: '+error.message;return}
   const isAdmin=data?.role==='admin',isOwner=String(currentUser.id)===OWNER_USER_ID;
   $('adminTab').classList.toggle('hidden',!isAdmin);
