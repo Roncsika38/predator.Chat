@@ -4,9 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Predator Chat</title>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<style>
-  <meta name="description" content="Predator Chat – magyar online közösségi chat, chatszobákkal, profilokkal és üzenetküldéssel.">
+<meta name="description" content="Predator Chat – magyar online közösségi chat, chatszobákkal, profilokkal és üzenetküldéssel.">
 <meta name="robots" content="index, follow">
 <meta name="googlebot" content="index, follow">
 <link rel="canonical" href="https://roncsika38.github.io/predator.Chat/">
@@ -14,6 +12,8 @@
 <meta property="og:description" content="Csatlakozz a Predator Chat magyar közösségéhez!">
 <meta property="og:url" content="https://roncsika38.github.io/predator.Chat/">
 <meta property="og:type" content="website">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
 :root{color-scheme:dark;--bg:#101012;--panel:#19191d;--panel2:#222227;--red:#e52535;--red2:#a90e20;--text:#f5f5f5;--muted:#a6a6ad;--line:#33333a}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--text);font:16px/1.45 Arial,sans-serif;padding-bottom:env(safe-area-inset-bottom)}
@@ -132,13 +132,17 @@ $('logout').addEventListener('click',async()=>{await db.auth.signOut()});
 document.querySelectorAll('[data-tab]').forEach(button=>{button.addEventListener('click',()=>{document.querySelectorAll('[data-tab]').forEach(b=>b.classList.toggle('active',b===button));['chat','members','private','profile','admin'].forEach(id=>$(id).classList.add('hidden'));$(button.dataset.tab).classList.remove('hidden')})});
 const OWNER_USER_ID='a25e2ffd-5f5c-4972-894d-7bfae6f879b4';
 async function checkAdmin(){
+  const isOwner=String(currentUser.id)===OWNER_USER_ID;
   const {data,error}=await db.from('chat_roles').select('role').eq('user_id',currentUser.id).maybeSingle();
-  if(error){$('adminTab').classList.add('hidden');$('roomAdminTools').classList.add('hidden');$('roleAdminTools').classList.add('hidden');$('adminStatus').textContent='Adminellenőrzési hiba: '+error.message;return}
-  const isAdmin=data?.role==='admin',isOwner=String(currentUser.id)===OWNER_USER_ID;
+  // A megadott tulajdonosi UUID-hoz a panel akkor is megjelenik,
+  // ha a saját szerepkör lekérdezése hibázik. Az adatbázis továbbra is ellenőrzi a műveleteket.
+  const isAdmin=data?.role==='admin'||isOwner;
   $('adminTab').classList.toggle('hidden',!isAdmin);
   $('roomAdminTools').classList.toggle('hidden',!isAdmin);
   $('roleAdminTools').classList.toggle('hidden',!isOwner);
-  $('adminStatus').textContent=isAdmin?(isOwner?'Tulajdonosi adminfiókkal vagy belépve.':'Adminisztrátori fiókkal vagy belépve.'):'Ehhez a fiókhoz nincs adminjog.';
+  $('adminStatus').textContent=error
+    ? (isOwner?'Tulajdonosi panel megnyitva. A szerepkör lekérdezése hibázott: '+error.message:'Adminellenőrzési hiba: '+error.message)
+    : (isAdmin?(isOwner?'Tulajdonosi adminfiókkal vagy belépve.':'Adminisztrátori fiókkal vagy belépve.'):'Ehhez a fiókhoz nincs adminjog.');
 }
 $('createRoomForm').addEventListener('submit',async e=>{
   e.preventDefault();if(!currentUser){$('roomAdminStatus').textContent='Előbb jelentkezz be.';return}
