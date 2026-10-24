@@ -236,8 +236,9 @@ button {
   <nav class="tabs">
     <button class="active" data-tab="chat">💬 Chat</button><button data-tab="members">👥 Tagok</button><button data-tab="private">✉ Üzenetek</button><button data-tab="profile">👤 Profil</button><button data-tab="admin" id="adminTab" class="hidden">⚙ Admin</button>
   </nav>
-  <section id="chat">
+  
     <div class="rooms" id="rooms"></div>
+  
     <div class="layout">
       <aside class="panel"><h3>Aktuális szoba</h3><div id="roomTitle">Válassz szobát</div><p class="muted small">A beszélgetés a bejelentkezett tagoknak jelenik meg.</p></aside>
       <div class="panel"><div id="messages"></div><form id="sendform" class="composer"><input id="message" maxlength="2000" placeholder="Írd ide az üzeneted…" autocomplete="off" required><button type="submit">Küldés ➤</button></form><p id="chatStatus" class="muted" role="status"></p></div>
