@@ -58,7 +58,152 @@ h2{font-size:21px}h3{font-size:17px}#roomTitle{font-size:19px;font-weight:bold}
 
 
 
+/* PREDATOR CHAT – MODERN PIROS-FEKETE KINÉZET */
+:root {
+  --bg: #09090c;
+  --panel: #15151b;
+  --panel2: #202027;
+  --red: #ed2438;
+  --red2: #b80f24;
+  --text: #f5f5f7;
+  --muted: #aaaab5;
+  --line: #34343e;
+}
+
+body {
+  background: radial-gradient(ellipse at top, #291017, #09090c 65%);
+  color: var(--text);
+}
+
+header {
+  background: #08080a;
+  border-bottom: 2px solid var(--red);
+  box-shadow: 0 5px 24px #ed24381c;
+  padding: 15px;
+}
+
+h1 {
+  letter-spacing: 1px;
+  font-size: 24px;
+}
+
+h1 span {
+  color: var(--red);
+  text-shadow: 0 0 15px #ed243855;
+}
+
+main {
+  max-width: 1320px;
+  margin: 20px auto;
+  padding: 0 14px;
+}
+
+.panel {
+  background: linear-gradient(145deg, #19191f, #111115);
+  border: 1px solid #38252d;
+  border-radius: 16px;
+  box-shadow: 0 10px 28px #0005;
+}
+
+.tabs {
+  background: #101014;
+  border-color: #38252d;
+  border-radius: 14px;
+}
+
+.tabs button {
+  border-radius: 10px;
+}
+
+.tabs button.active,
+.rooms button.active {
+  background: linear-gradient(135deg, #f12b40, #a90e22);
+  box-shadow: 0 3px 15px #ed243833;
+}
+
+.rooms button {
+  background: #19191f;
+  border: 1px solid #41313a;
+  border-radius: 10px;
+  padding: 11px 15px;
+}
+
+.layout {
+  grid-template-columns: minmax(190px, 0.3fr) minmax(0, 1fr);
+  gap: 14px;
+}
+
+#chat .layout > aside {
+  background: linear-gradient(160deg, #21151a, #111115);
+  border-color: #632433;
+}
+
+#roomTitle {
+  color: #ff5368;
+  margin: 12px 0;
+}
+
+#messages {
+  padding: 8px 4px;
+}
+
+.msg {
+  border-bottom: 1px solid #30272f;
+  border-radius: 10px;
+  padding: 12px 9px;
+}
+
+.msg:hover {
+  background: #ffffff08;
+}
+
+.msg-avatar {
+  border: 2px solid #bd2338;
+}
+
+.composer {
+  background: #0b0b0e;
+  border-color: #49232c;
+  padding: 6px;
+}
+
+.composer button,
+button {
+  background: linear-gradient(135deg, #f12b40, #b20e24);
+}
+
+.member-item {
+  background: #121216;
+  border-color: #393039;
+  border-radius: 12px;
+}
+
+.auth {
+  border-color: #632433;
+  box-shadow: 0 15px 45px #0008;
+}
+
+@media (max-width: 650px) {
+  main {
+    margin: 10px auto;
+    padding: 0 8px;
+  }
+
+  .layout {
+    grid-template-columns: 1fr;
+  }
+
+  .panel {
+    padding: 12px;
+  }
+
+  h1 {
+    font-size: 19px;
+  }
+}
+
   </style>
+  
   </head>
 <body>
 <header>
