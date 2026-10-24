@@ -45,6 +45,46 @@ h2{font-size:21px}h3{font-size:17px}#roomTitle{font-size:19px;font-weight:bold}
 @media(max-width:650px){header{padding:11px 10px;gap:7px}h1{font-size:18px}#userbar{max-width:28vw;font-size:11px}header>button{padding:9px;font-size:13px}main{padding:0 8px;margin:9px auto}.panel{padding:11px;border-radius:13px}.layout{grid-template-columns:1fr;gap:8px}#chat .layout>aside{margin-bottom:0}#chat .layout>aside h3{margin:0 0 6px}#chat .layout>aside p{margin:5px 0}#messages{height:calc(100dvh - 330px);min-height:240px;max-height:58vh}.msg{padding:10px 5px}.msg div{font-size:16px}.composer{position:sticky;bottom:4px;z-index:5}.composer input{font-size:16px;padding:11px 12px}.composer button{padding:11px 12px}.tabs button{font-size:13px;padding:10px}.auth{margin:15px auto}}
 @media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important;transition:none!important}}
 </style>
+:root {
+  --bg: #08090d;
+  --panel: #11131a;
+  --panel2: #191c25;
+  --red: #ff263d;
+  --red2: #bd1028;
+  --text: #f7f7fb;
+  --muted: #a5a9b8;
+  --line: #2c303c;
+}
+body {
+  background: radial-gradient(ellipse at top, #261018, #08090d 65%);
+}
+header {
+  background: #09090d;
+  border-bottom: 2px solid #ff263d;
+}
+main { max-width: 1450px; }
+.panel {
+  background: linear-gradient(145deg, #151720, #0f1016);
+  border-color: #2d303b;
+}
+.rooms button { background: #171922; }
+.rooms button.active,
+.tabs button.active {
+  background: linear-gradient(135deg, #ff263d, #a80b25);
+}
+.msg { background: #11131a; border-radius: 10px; }
+.msg b { color: #ff5a72; }
+.msg:nth-child(5n+2) .msg-head b { color: #47d7ff; }
+.msg:nth-child(5n+3) .msg-head b { color: #c39aff; }
+.msg:nth-child(5n+4) .msg-head b { color: #71e3a3; }
+.msg:nth-child(5n+5) .msg-head b { color: #ffc46b; }
+button {
+  background: linear-gradient(135deg, #ff263d, #b90e27);
+}
+@media (min-width: 1000px) {
+  main { max-width: 1450px; }
+}
+
 /* Predator Chat – piros-fekete megjelenés */
 :root {
   --bg: #08090d;
@@ -110,7 +150,9 @@ button:hover {
   .layout { grid-template-columns: minmax(0, 1fr); }
 }
 
-</head>
+
+  </style>
+  </head>
 <body>
 <header>
   <h1>🔴 Predator <span>Chat</span></h1>
