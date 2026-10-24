@@ -34,8 +34,13 @@ main{max-width:1100px;margin:12px auto;padding:0 10px}
 .layout{display:grid;grid-template-columns:210px minmax(0,1fr);gap:12px}
 h2{font-size:21px}h3{font-size:17px}#roomTitle{font-size:19px;font-weight:bold}
 #messages{height:55vh;min-height:280px;overflow-y:auto;display:flex;flex-direction:column;gap:5px;padding:4px;scroll-behavior:smooth}
-.msg{display:flex;align-items:flex-start;gap:10px;padding:11px 9px;border-bottom:1px solid #303036;overflow-wrap:anywhere;background:transparent}.msg-avatar{width:38px;height:38px;flex:0 0 38px;object-fit:cover;border-radius:50%;background:#29292f;border:1px solid var(--red)}.msg-content{min-width:0;flex:1}.msg-head{display:flex;align-items:center;flex-wrap:wrap;gap:3px}.msg b{color:#34c5e0;font-size:15px}.msg .time{color:var(--muted);font-size:11px;margin-left:5px}.msg-content .message-body{margin-top:4px;white-space:pre-wrap;line-height:1.45}
+.msg{display:flex;align-items:flex-start;gap:10px;padding:11px 9px;border-bottom:1px solid #303036;overflow-wrap:anywhere;background:transparent}.msg-avatar{width:38px;height:38px;flex:0 0 38px;object-fit:cover;border-radius:50%;background:#29292f;border:1px solid var(--red)}.msg-content{min-width:0;flex:1}.msg-head{display:flex;align-items:center;flex-wrap:wrap;gap:3px}.msg .time{color:var(--muted);font-size:11px;margin-left:5px}.msg-content .message-body{margin-top:4px;white-space:pre-wrap;line-height:1.45}
 .composer{display:flex;align-items:center;gap:8px;margin-top:10px;padding:5px;background:#111114;border:1px solid #33333a;border-radius:28px}
+.msg:nth-child(5n+1) b{color:#ff5b70}
+.msg:nth-child(5n+2) b{color:#47d7ff}
+.msg:nth-child(5n+3) b{color:#c39aff}
+.msg:nth-child(5n+4) b{color:#71e3a3}
+.msg:nth-child(5n+5) b{color:#ffc46b}
 .composer input{flex:1;border:1px solid var(--red);border-radius:25px;background:#09090b;padding:12px 14px}.composer button{border-radius:25px;padding:12px 15px;white-space:nowrap}
 .muted{color:var(--muted)}#status,#chatStatus,#avatarStatus,#roomAdminStatus,#roleStatus{white-space:pre-wrap;color:#ff9aa8;font-size:13px}
 .hidden{display:none!important}.small{font-size:13px}
