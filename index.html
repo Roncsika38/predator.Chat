@@ -429,7 +429,7 @@ async function loadMembers(){
   const list=$('memberList');list.replaceChildren();
   const recipients=$('privateRecipient');const previous=recipients.value;recipients.replaceChildren();
   const first=document.createElement('option');first.value='';first.textContent='Válassz tagot…';recipients.append(first);
-  const others=(data||[]).filter(p=>String(p.id)!==String(currentUser.id));
+  const others=data||[];
   for(const p of data||[]){
     profileCache.set(String(p.id),p);
     if(String(p.id)!==String(currentUser.id)){
