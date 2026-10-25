@@ -239,10 +239,16 @@ button {
   
     <div class="rooms" id="rooms"></div>
   
-    <div class="layout">
+   <div class="layout predator-layout">
       <aside class="panel"><h3>Aktuális szoba</h3><div id="roomTitle">Válassz szobát</div><p class="muted small">A beszélgetés a bejelentkezett tagoknak jelenik meg.</p></aside>
       <div class="panel"><div id="messages"></div><form id="sendform" class="composer"><input id="message" maxlength="2000" placeholder="Írd ide az üzeneted…" autocomplete="off" required><button type="submit">Küldés ➤</button></form><p id="chatStatus" class="muted" role="status"></p></div>
     </div>
+  <aside class="panel predator-members">
+  <h3>🟢 Tagok</h3>
+  <p id="membersStatus" class="muted small">Tagok betöltése…</p>
+  <div id="memberList" class="member-list"></div>
+</div>
+  </aside>
   </section>
   <section id="members" class="panel hidden"><h2>Tagok</h2><p id="membersStatus" class="muted" role="status">Tagok betöltése…</p><div id="memberList" class="member-list"></div></section>
   <section id="private" class="panel hidden"><h2>Privát üzenetek</h2><p class="muted small">Válassz tagot, majd küldhetsz neki privát üzenetet. A szükséges adatbázis-jogosultság hiányát a rendszer jelzi.</p><div class="private-layout"><div><label for="privateRecipient">Címzett</label><select id="privateRecipient"><option value="">Válassz tagot…</option></select><p id="privateStatus" class="muted" role="status"></p></div><div><div id="privateMessages" class="private-messages"></div><form id="privateSendForm" class="private-compose"><input id="privateMessage" maxlength="2000" placeholder="Privát üzenet…" autocomplete="off" required><button type="submit">Küldés</button></form></div></div></section>
