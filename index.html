@@ -202,6 +202,12 @@ button {
   }
 }
 
+
+/* Háromoszlopos elrendezés: szobák, chat, tagok */
+.predator-layout{display:grid;grid-template-columns:210px minmax(0,1fr) 240px;gap:12px}
+.predator-layout>main{min-width:0;margin:0;max-width:none;padding:14px}
+#chatStatus{white-space:pre-wrap;color:#ff9aa8;font-size:13px}
+@media(max-width:850px){.predator-layout{grid-template-columns:1fr}.predator-layout>main{padding:12px}}
   </style>
   
   </head>
@@ -237,24 +243,23 @@ button {
     <button class="active" data-tab="chat">💬 Chat</button><button data-tab="members">👥 Tagok</button><button data-tab="private">✉ Üzenetek</button><button data-tab="profile">👤 Profil</button><button data-tab="admin" id="adminTab" class="hidden">⚙ Admin</button>
   </nav>
   
-    <div class="rooms" id="rooms"></div>
-  
  <div class="layout predator-layout">
   <aside class="panel">
     <h3>🔴 Szobák</h3>
     <div id="rooms"></div>
   </aside>
 
-  <main class="panel">
+  <section class="panel">
     <h3>💬 Beszélgetés</h3>
     <div id="roomTitle">Válassz szobát</div>
     <p class="muted small">Üdvözlünk a Predator Chatben!</p>
+    <p id="chatStatus" role="status" class="muted small"></p>
     <div id="messages"></div>
     <form id="sendForm" class="composer">
       <input id="message" maxlength="2000" placeholder="Írd ide az üzeneted..." required>
       <button type="submit">Küldés</button>
     </form>
-  </main>
+  </section>
 
   <aside class="panel predator-members">
     <h3>🟢 Tagok</h3>
@@ -294,18 +299,7 @@ button {
 'use strict';
 const SUPABASE_URL = 'https://tmcbfjpwzeafixchsbqt.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_qRH3wqaMjDd0gPdvvzElBw_luhhqZLP';
-const db = window.supabase.createClient(
-  SUPABASE_URL,
-  SUPABASE_KEY,
-  {
-    auth: {
-      persistSession: true,
-      autoRefreshToken: true,
-      detectSessionInUrl: true
-    },
-    accessToken: undefined
-  }
-);
+const db = window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
 const $ = id => document.getElementById(id);
 let currentUser=null,currentRoom=null,roomList=[],messageChannel=null,recoveryMode=false,privateRecipientId='';
 const profileCache=new Map();
@@ -316,34 +310,32 @@ function showRecovery(show){recoveryMode=show;$('normalAuth').classList.toggle('
 function explainUrlError(){const p=new URLSearchParams(location.hash.slice(1));const code=p.get('error_code');if(code==='otp_expired'||p.get('error')==='access_denied'){status('A jelszó-visszaállító link lejárt vagy már felhasználták. Kérj új e-mailt, és a legfrissebb levél linkjét nyisd meg egyszer.');return true}return false}
 $('authform').addEventListener('submit', async e => {
   e.preventDefault();
-
-  const button = $('authform').querySelector('button[type="submit"]');
+  const form = $('authform');
+  const button = form.querySelector('button[type="submit"]');
   button.disabled = true;
   status('Bejelentkezés…');
-
   try {
     const email = $('email').value.trim();
     const password = $('password').value;
-
-    const { data, error } = await db.auth.signInWithPassword({
-      email,
-      password
-    });
-
-    if (error) {
-      status('Bejelentkezési hiba: ' + error.message);
+    const result = await Promise.race([
+      db.auth.signInWithPassword({ email, password }),
+      new Promise((_, reject) => setTimeout(() => reject(new Error('A Supabase-kapcsolat túl sokáig válaszol. Frissítsd az oldalt, és próbáld újra.')), 15000))
+    ]);
+    if (result.error) {
+      status('Bejelentkezési hiba: ' + result.error.message);
       return;
     }
-
-    if (data.user) {
+    if (result.data && result.data.user) {
       status('Sikeres belépés, betöltés…');
+    } else {
+      status('Nem érkezett vissza felhasználói adat. Próbáld újra.');
     }
   } catch (error) {
-    status('Kapcsolódási hiba: ' + (error.message || 'Próbáld újra.'));
+    status('Bejelentkezési hiba: ' + (error.message || 'Ismeretlen hiba.'));
   } finally {
     button.disabled = false;
-  });
-
+  }
+});
 $('register').addEventListener('click',async()=>{const email=$('email').value.trim();const password=$('password').value;if(!email||password.length<6){status('Adj meg e-mail-címet és legalább 6 karakteres jelszót.');return}status('Fiók létrehozása…');const {error}=await db.auth.signUp({email,password,options:{emailRedirectTo:location.origin+location.pathname}});status(error?'Regisztrációs hiba: '+error.message:'Regisztráció elküldve. Ha megerősítő levelet kapsz, nyisd meg azt.')});
 $('forgotPassword').addEventListener('click',async()=>{const email=$('email').value.trim();if(!email){status('Először írd be az e-mail-címedet!');return}status('Jelszó-visszaállító e-mail küldése…');const {error}=await db.auth.resetPasswordForEmail(email,{redirectTo:location.origin+location.pathname});status(error?'Hiba: '+error.message:'Ha a cím regisztrálva van, elküldtük a visszaállító e-mailt. A legfrissebb levelet nyisd meg.')});
 $('newPasswordForm').addEventListener('submit',async e=>{e.preventDefault();const p1=$('newPassword').value,p2=$('newPasswordAgain').value;if(p1.length<6){status('A jelszónak legalább 6 karakteresnek kell lennie.');return}if(p1!==p2){status('A két jelszó nem egyezik.');return}status('Jelszó mentése…');const {error}=await db.auth.updateUser({password:p1});if(error){status('Nem sikerült megváltoztatni a jelszót: '+error.message);return}status('Sikerült megváltoztatni a jelszót.');$('newPasswordForm').reset();showRecovery(false);await db.auth.signOut();history.replaceState(null,'',location.pathname)});
@@ -394,7 +386,7 @@ function selectRoom(room){currentRoom=room;const name=room.name||room.title||roo
 async function loadProfileCache(){if(!currentUser)return;const {data,error}=await db.from('profiles').select('id,display_name,avatar_url').limit(500);if(error){console.warn('Profilképek betöltése:',error.message);return}(data||[]).forEach(p=>profileCache.set(String(p.id),p));const mine=profileCache.get(String(currentUser.id));if(mine?.avatar_url)$('avatarPreview').src=mine.avatar_url;else $('avatarPreview').src=DEFAULT_AVATAR}
 function renderMessage(m){if(!m||String(m.room_id)!==String(currentRoom?.id))return;if($('messages').querySelector('[data-id="'+CSS.escape(String(m.id))+'"]'))return;const profile=profileCache.get(String(m.sender_id))||{};const item=document.createElement('div');item.className='msg';item.dataset.id=String(m.id);const avatar=document.createElement('img');avatar.className='msg-avatar';avatar.alt='Profilkép';avatar.src=profile.avatar_url||DEFAULT_AVATAR;const content=document.createElement('div');content.className='msg-content';const head=document.createElement('div');head.className='msg-head';const name=document.createElement('b');name.textContent=profile.display_name||(String(m.sender_id)===String(currentUser?.id)?'Te':'Tag');const time=document.createElement('span');time.className='time';time.textContent=m.created_at?new Date(m.created_at).toLocaleString('hu-HU'):'';const body=document.createElement('div');body.className='message-body';body.textContent=m.body||'';head.append(name,time);content.append(head,body);item.append(avatar,content);$('messages').append(item);$('messages').scrollTop=$('messages').scrollHeight}
 async function loadMessages(){$('messages').replaceChildren();if(!currentRoom)return;const {data,error}=await db.from('messages').select('id,sender_id,room_id,body,created_at').eq('room_id',currentRoom.id).is('recipient_id',null).order('created_at',{ascending:true}).limit(100);if(error){chatStatus('Nem tölthetők be az üzenetek: '+error.message);return}const ids=[...new Set((data||[]).map(m=>String(m.sender_id)))].filter(id=>!profileCache.has(id));if(ids.length){const {data:profiles}=await db.from('profiles').select('id,display_name,avatar_url').in('id',ids);(profiles||[]).forEach(p=>profileCache.set(String(p.id),p))}(data||[]).forEach(renderMessage);chatStatus('')}
-$('sendform').addEventListener('submit',async e=>{e.preventDefault();if(!currentUser||!currentRoom){chatStatus('Előbb válassz szobát.');return}const body=$('message').value.trim();if(!body)return;const btn=$('sendform').querySelector('button');btn.disabled=true;const {error}=await db.from('messages').insert({room_id:currentRoom.id,sender_id:currentUser.id,body});btn.disabled=false;if(error){chatStatus('Az üzenet nem ment ki: '+error.message);return}$('message').value='';chatStatus('')});
+$('sendForm').addEventListener('submit',async e=>{e.preventDefault();if(!currentUser||!currentRoom){chatStatus('Előbb válassz szobát.');return}const body=$('message').value.trim();if(!body)return;const btn=$('sendForm').querySelector('button');btn.disabled=true;const {error}=await db.from('messages').insert({room_id:currentRoom.id,sender_id:currentUser.id,body});btn.disabled=false;if(error){chatStatus('Az üzenet nem ment ki: '+error.message);return}$('message').value='';chatStatus('')});
 
 function setMemberStatus(message){$('membersStatus').textContent=message||''}
 function setPrivateStatus(message){$('privateStatus').textContent=message||''}
