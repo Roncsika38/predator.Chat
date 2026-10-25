@@ -31,7 +31,7 @@ main{max-width:1100px;margin:12px auto;padding:0 10px}
 .tabs{display:flex;gap:5px;overflow-x:auto;flex-wrap:nowrap;background:#090909;border:1px solid #29292e;border-radius:13px;padding:6px;margin-bottom:12px}
 .tabs button{flex:0 0 auto;background:transparent;color:#ddd;padding:10px 12px;white-space:nowrap}.tabs button.active{background:var(--red);color:white}
 .rooms{display:flex;gap:8px;overflow-x:auto;margin-bottom:12px;padding-bottom:3px}.rooms button{background:#29292f;border:1px solid #414149;white-space:nowrap}.rooms button.active{background:var(--red);border-color:var(--red)}
-.layout{display:grid;grid-template-columns:210px minmax(0,1fr);gap:12px}
+.layout{display:grid;grid-template-columns:minmax(170px,0.75fr) minmax(0,2fr) minmax(180px,0.8fr);gap:12px;align-items:start}
 h2{font-size:21px}h3{font-size:17px}#roomTitle{font-size:19px;font-weight:bold}
 #messages{height:55vh;min-height:280px;overflow-y:auto;display:flex;flex-direction:column;gap:5px;padding:4px;scroll-behavior:smooth}
 .msg{display:flex;align-items:flex-start;gap:10px;padding:11px 9px;border-bottom:1px solid #303036;overflow-wrap:anywhere;background:transparent}.msg-avatar{width:38px;height:38px;flex:0 0 38px;object-fit:cover;border-radius:50%;background:#29292f;border:1px solid var(--red)}.msg-content{min-width:0;flex:1}.msg-head{display:flex;align-items:center;flex-wrap:wrap;gap:3px}.msg .time{color:var(--muted);font-size:11px;margin-left:5px}.msg-content .message-body{margin-top:4px;white-space:pre-wrap;line-height:1.45}
@@ -59,6 +59,11 @@ h2{font-size:21px}h3{font-size:17px}#roomTitle{font-size:19px;font-weight:bold}
 
 
 /* PREDATOR CHAT – MODERN PIROS-FEKETE KINÉZET */
+.layout.predator-layout{display:grid;grid-template-columns:minmax(170px,.75fr) minmax(0,2fr) minmax(180px,.8fr);gap:14px;align-items:start}
+.layout.predator-layout>.panel{min-width:0}.chat-center{min-width:0}.chat-center #messages{min-height:280px}
+#chatStatus{white-space:pre-wrap;color:#ff9aa8;font-size:13px}
+.police-badge{display:inline-flex;align-items:center;margin-left:4px;padding:1px 5px;border:1px solid #60a5fa;border-radius:6px;background:#172554;color:#bfdbfe;font-size:12px;font-weight:bold}
+@media(max-width:850px){.layout.predator-layout{grid-template-columns:1fr}}
 :root {
   --bg: #09090c;
   --panel: #15151b;
@@ -249,6 +254,7 @@ button {
     <h3>💬 Beszélgetés</h3>
     <div id="roomTitle">Válassz szobát</div>
     <p class="muted small">Üdvözlünk a Predator Chatben!</p>
+    <p id="chatStatus" role="status" class="muted small"></p>
     <div id="messages"></div>
     <form id="sendForm" class="composer">
       <input id="message" maxlength="2000" placeholder="Írd ide az üzeneted..." required>
@@ -352,9 +358,11 @@ async function loadRooms(){
 }
 function selectRoom(room){currentRoom=room;const name=room.name||room.title||room.slug||'Szoba';$('roomTitle').textContent=name;document.querySelectorAll('#rooms button').forEach(b=>b.classList.toggle('active',b.textContent==='💬 '+name));if(messageChannel){db.removeChannel(messageChannel);messageChannel=null}loadMessages();messageChannel=db.channel('room-'+room.id).on('postgres_changes',{event:'INSERT',schema:'public',table:'messages',filter:'room_id=eq.'+room.id},payload=>renderMessage(payload.new)).subscribe()}
 async function loadProfileCache(){if(!currentUser)return;const {data,error}=await db.from('profiles').select('id,display_name,avatar_url').limit(500);if(error){console.warn('Profilképek betöltése:',error.message);return}(data||[]).forEach(p=>profileCache.set(String(p.id),p));const mine=profileCache.get(String(currentUser.id));if(mine?.avatar_url)$('avatarPreview').src=mine.avatar_url;else $('avatarPreview').src=DEFAULT_AVATAR}
-function renderMessage(m){if(!m||String(m.room_id)!==String(currentRoom?.id))return;if($('messages').querySelector('[data-id="'+CSS.escape(String(m.id))+'"]'))return;const profile=profileCache.get(String(m.sender_id))||{};const item=document.createElement('div');item.className='msg';item.dataset.id=String(m.id);const avatar=document.createElement('img');avatar.className='msg-avatar';avatar.alt='Profilkép';avatar.src=profile.avatar_url||DEFAULT_AVATAR;const content=document.createElement('div');content.className='msg-content';const head=document.createElement('div');head.className='msg-head';const name=document.createElement('b');name.textContent=profile.display_name||(String(m.sender_id)===String(currentUser?.id)?'Te':'Tag');const time=document.createElement('span');time.className='time';time.textContent=m.created_at?new Date(m.created_at).toLocaleString('hu-HU'):'';const body=document.createElement('div');body.className='message-body';body.textContent=m.body||'';head.append(name,time);content.append(head,body);item.append(avatar,content);$('messages').append(item);$('messages').scrollTop=$('messages').scrollHeight}
+function nameColorFor(id){const palette=['#ff667a','#55d8ff','#c39aff','#71e3a3','#ffc46b','#ff8bd1','#a7f06a'];let n=0;for(const ch of String(id||''))n=(n*31+ch.charCodeAt(0))>>>0;return palette[n%palette.length]}
+function addPoliceBadge(parent,userId){if(String(userId)===OWNER_USER_ID){const badge=document.createElement('span');badge.className='police-badge';badge.textContent='👮 Rendőr';badge.title='Tulajdonosi jelvény';parent.append(badge)}}
+function renderMessage(m){if(!m||String(m.room_id)!==String(currentRoom?.id))return;if($('messages').querySelector('[data-id="'+CSS.escape(String(m.id))+'"]'))return;const profile=profileCache.get(String(m.sender_id))||{};const item=document.createElement('div');item.className='msg';item.dataset.id=String(m.id);const avatar=document.createElement('img');avatar.className='msg-avatar';avatar.alt='Profilkép';avatar.src=profile.avatar_url||DEFAULT_AVATAR;const content=document.createElement('div');content.className='msg-content';const head=document.createElement('div');head.className='msg-head';const name=document.createElement('b');name.textContent=profile.display_name||(String(m.sender_id)===String(currentUser?.id)?'Te':'Tag');name.style.color=nameColorFor(m.sender_id);addPoliceBadge(head,m.sender_id);const time=document.createElement('span');time.className='time';time.textContent=m.created_at?new Date(m.created_at).toLocaleString('hu-HU'):'';const body=document.createElement('div');body.className='message-body';body.textContent=m.body||'';head.append(name,time);content.append(head,body);item.append(avatar,content);$('messages').append(item);$('messages').scrollTop=$('messages').scrollHeight}
 async function loadMessages(){$('messages').replaceChildren();if(!currentRoom)return;const {data,error}=await db.from('messages').select('id,sender_id,room_id,body,created_at').eq('room_id',currentRoom.id).is('recipient_id',null).order('created_at',{ascending:true}).limit(100);if(error){chatStatus('Nem tölthetők be az üzenetek: '+error.message);return}const ids=[...new Set((data||[]).map(m=>String(m.sender_id)))].filter(id=>!profileCache.has(id));if(ids.length){const {data:profiles}=await db.from('profiles').select('id,display_name,avatar_url').in('id',ids);(profiles||[]).forEach(p=>profileCache.set(String(p.id),p))}(data||[]).forEach(renderMessage);chatStatus('')}
-$('sendform').addEventListener('submit',async e=>{e.preventDefault();if(!currentUser||!currentRoom){chatStatus('Előbb válassz szobát.');return}const body=$('message').value.trim();if(!body)return;const btn=$('sendform').querySelector('button');btn.disabled=true;const {error}=await db.from('messages').insert({room_id:currentRoom.id,sender_id:currentUser.id,body});btn.disabled=false;if(error){chatStatus('Az üzenet nem ment ki: '+error.message);return}$('message').value='';chatStatus('')});
+$('sendForm').addEventListener('submit',async e=>{e.preventDefault();if(!currentUser||!currentRoom){chatStatus('Előbb válassz szobát.');return}const body=$('message').value.trim();if(!body)return;const btn=$('sendForm').querySelector('button');btn.disabled=true;const {error}=await db.from('messages').insert({room_id:currentRoom.id,sender_id:currentUser.id,body});btn.disabled=false;if(error){chatStatus('Az üzenet nem ment ki: '+error.message);return}$('message').value='';chatStatus('')});
 
 function setMemberStatus(message){$('membersStatus').textContent=message||''}
 function setPrivateStatus(message){$('privateStatus').textContent=message||''}
@@ -439,3 +447,4 @@ db.auth.onAuthStateChange((event,session)=>{if(event==='PASSWORD_RECOVERY'){show
 </script>
 </body>
 </html>
+```
