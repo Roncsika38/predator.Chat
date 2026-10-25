@@ -342,7 +342,7 @@ $('authform').addEventListener('submit', async e => {
     status('Kapcsolódási hiba: ' + (error.message || 'Próbáld újra.'));
   } finally {
     button.disabled = false;
-  }
+  });
 
 $('register').addEventListener('click',async()=>{const email=$('email').value.trim();const password=$('password').value;if(!email||password.length<6){status('Adj meg e-mail-címet és legalább 6 karakteres jelszót.');return}status('Fiók létrehozása…');const {error}=await db.auth.signUp({email,password,options:{emailRedirectTo:location.origin+location.pathname}});status(error?'Regisztrációs hiba: '+error.message:'Regisztráció elküldve. Ha megerősítő levelet kapsz, nyisd meg azt.')});
 $('forgotPassword').addEventListener('click',async()=>{const email=$('email').value.trim();if(!email){status('Először írd be az e-mail-címedet!');return}status('Jelszó-visszaállító e-mail küldése…');const {error}=await db.auth.resetPasswordForEmail(email,{redirectTo:location.origin+location.pathname});status(error?'Hiba: '+error.message:'Ha a cím regisztrálva van, elküldtük a visszaállító e-mailt. A legfrissebb levelet nyisd meg.')});
