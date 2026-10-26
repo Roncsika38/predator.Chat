@@ -1048,6 +1048,75 @@ db.auth.onAuthStateChange((event,session)=>{if(event==='PASSWORD_RECOVERY'){show
     }
   }
 })();
+// Predator Chat chatbotgomb és beszélgetési ablak
+const botButton = document.createElement('button');
+botButton.textContent = '🤖 Chatbot';
+botButton.style.cssText =
+  'position:fixed;right:20px;bottom:20px;z-index:9999;background:#d71935;color:white;border:1px solid #ff334f;border-radius:12px;padding:14px;cursor:pointer;font-weight:bold;';
+
+const botPanel = document.createElement('div');
+botPanel.style.cssText =
+  'display:none;position:fixed;right:20px;bottom:80px;width:min(340px,90vw);height:420px;max-height:70vh;z-index:9999;background:#111;color:white;border:1px solid #e21b36;border-radius:14px;padding:12px;box-shadow:0 0 20px #a00020;';
+
+botPanel.innerHTML = `
+  <div style="display:flex;justify-content:space-between;align-items:center;color:#ff334f;font-weight:bold">
+    <span>🤖 Predator Chatbot</span>
+    <button id="botClose" style="background:#b20e24;color:white;border:0;padding:6px 10px">X</button>
+  </div>
+  <div id="botMessages" style="height:290px;overflow:auto;margin:10px 0;padding:8px;background:#080808;border-radius:8px">
+    <p>Bot: Szia! Miben segíthetek?</p>
+  </div>
+  <form id="botForm" style="display:flex;gap:6px">
+    <input id="botInput" placeholder="Írj a chatbotnak..." required
+      style="min-width:0;flex:1;background:#222;color:white;border:1px solid #555;border-radius:8px;padding:9px">
+    <button style="background:#d71935;color:white;border:0;border-radius:8px;padding:9px">Küldés</button>
+  </form>
+`;
+
+document.body.append(botButton, botPanel);
+
+botButton.onclick = () => {
+  botPanel.style.display =
+    botPanel.style.display === 'none' ? 'block' : 'none';
+};
+
+botPanel.querySelector('#botClose').onclick = () => {
+  botPanel.style.display = 'none';
+};
+
+botPanel.querySelector('#botForm').onsubmit = async (event) => {
+  event.preventDefault();
+
+  const input = botPanel.querySelector('#botInput');
+  const messages = botPanel.querySelector('#botMessages');
+  const message = input.value.trim();
+  if (!message) return;
+
+  const userMessage = document.createElement('p');
+  userMessage.textContent = 'Te: ' + message;
+  messages.append(userMessage);
+  input.value = '';
+
+  const answer = document.createElement('p');
+  answer.textContent = 'Bot: Gondolkodom…';
+  messages.append(answer);
+  messages.scrollTop = messages.scrollHeight;
+
+  try {
+    const { data, error } = await db.functions.invoke(
+      'predator-chatbot',
+      { body: { message } }
+    );
+
+    answer.textContent = error
+      ? 'Bot: Most nem tudok válaszolni. Ellenőrizni kell a kapcsolatot.'
+      : 'Bot: ' + (data?.reply || 'Nem érkezett válasz.');
+  } catch {
+    answer.textContent = 'Bot: Nem sikerült kapcsolódni.';
+  }
+
+  messages.scrollTop = messages.scrollHeight;
+};
 </script>
 
 </body>
