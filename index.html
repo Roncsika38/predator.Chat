@@ -585,7 +585,11 @@ $('onlineMembersStatus').textContent='Nincs online tag';
   const oldProfile=profileCache.get(String(currentUser.id))||{};
   const {error:ownProfileError}=await db.from('profiles').upsert({id:currentUser.id,email:currentUser.email,display_name:oldProfile.display_name||currentUser.email?.split('@')[0]||'Tag',avatar_url:oldProfile.avatar_url||null},{onConflict:'id'});
   if(ownProfileError)console.warn('Saját profil létrehozása nem sikerült:',ownProfileError.message);
-  await loadProfileCache();await checkAdmin();await loadRooms();await loadMembers();
+  await loadProfileCache();
+await checkAdmin();
+await loadRooms();
+await loadMembers();
+startOnlinePresence();
 }
 db.auth.onAuthStateChange((event,session)=>{if(event==='PASSWORD_RECOVERY'){showRecovery(true);return}if(event==='SIGNED_OUT')recoveryMode=false;setTimeout(()=>showSession(session),0)});
 (async()=>{if(!explainUrlError()){const {data,error}=await db.auth.getSession();if(error)status('Munkamenet-hiba: '+error.message);if(data?.session)await showSession(data.session)}})();
