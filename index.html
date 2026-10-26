@@ -562,7 +562,7 @@ $('privateSendForm').addEventListener('submit',async e=>{
   if(!body)return;
   const btn=$('privateSendForm').querySelector('button');btn.disabled=true;setPrivateStatus('Üzenet küldése…');
   const payload={sender_id:currentUser.id,recipient_id:recipient,body};
-  if(currentRoom?.id)payload.room_id=currentRoom.id;
+
   const {error}=await db.from('messages').insert(payload);
   btn.disabled=false;
   if(error){setPrivateStatus('Nem sikerült elküldeni: '+error.message+' — a messages INSERT szabályt és a room_id követelményt ellenőrizni kell.');return}
