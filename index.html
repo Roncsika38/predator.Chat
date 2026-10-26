@@ -413,11 +413,10 @@ $('authform').addEventListener('submit', async e => {
       return;
     }
 
-    const { error } = await db.auth.signInWithPassword({
-      email: profile.email,
-      password
-    });
-
+   const { error } = await db.auth.signInWithPassword({
+  email: profile.email,
+  password: password
+});
     if (error) {
       status('Sikertelen belépés. Ellenőrizd a jelszót.');
       return;
