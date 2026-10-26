@@ -209,7 +209,28 @@ button {
 #chatStatus{white-space:pre-wrap;color:#ff9aa8;font-size:13px}
 @media(max-width:850px){.predator-layout{grid-template-columns:1fr}.predator-layout>main{padding:12px}}
   #chatImageFile{display:none}.chat-image{display:block;max-width:100%;max-height:420px;object-fit:contain;border-radius:12px;margin-top:8px}
-</style>
+</style>#onlineMemberList .member-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 5px 2px;
+  border: none !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+#onlineMemberList .member-item img {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+#onlineMemberList .member-name {
+  flex: 1;
+  min-width: 0;
+}
   
   </head>
 <body>
