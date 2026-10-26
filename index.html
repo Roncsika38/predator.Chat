@@ -438,10 +438,118 @@ body='[[PREDATOR_IMAGE:'+(uploaded?.path||path)+']]'+(textBody?' '+textBody:'')}
  }catch(err){chatStatus('Hiba: '+(err.message||'Ismeretlen hiba'))}finally{btn.disabled=false}
 });
 $('saveDisplayName').addEventListener('click',async()=>{if(!currentUser){$('displayNameStatus').textContent='Előbb jelentkezz be.';return}const display_name=$('displayName').value.trim();if(display_name.length<2||display_name.length>32){$('displayNameStatus').textContent='A név 2–32 karakter legyen.';return}const old=profileCache.get(String(currentUser.id))||{};const {error}=await db.from('profiles').upsert({id:currentUser.id,email:currentUser.email,display_name,avatar_url:old.avatar_url||null},{onConflict:'id'});if(error){$('displayNameStatus').textContent='Névmentési hiba: '+error.message;return}profileCache.set(String(currentUser.id),{...old,id:currentUser.id,display_name,email:currentUser.email});$('userbar').textContent=display_name;$('displayNameStatus').textContent='A neved elmentve.';await loadMembers();if(currentRoom)await loadMessages()});
-function applySavedBackground(){const saved=localStorage.getItem('predatorChatBackground');if(saved){document.body.style.backgroundImage='linear-gradient(#09090caa,#09090cdd),url("'+saved+'")';document.body.style.backgroundSize='cover';document.body.style.backgroundAttachment='fixed';document.body.style.backgroundPosition='center'}}
-$('uploadBackground').addEventListener('click',()=>{const file=$('backgroundFile').files[0];if(!file){$('backgroundStatus').textContent='Válassz ki egy háttérképet.';return}if(!['image/jpeg','image/png','image/webp'].includes(file.type)){$('backgroundStatus').textContent='JPG, PNG vagy WEBP képet válassz.';return}if(file.size>5*1024*1024){$('backgroundStatus').textContent='A háttérkép legfeljebb 5 MB lehet.';return}const reader=new FileReader();reader.onload=()=>{try{localStorage.setItem('predatorChatBackground',reader.result);applySavedBackground();$('backgroundStatus').textContent='Háttérkép beállítva ezen a böngészőn.'}catch(e){$('backgroundStatus').textContent='Nem sikerült elmenteni. Próbálj kisebb képet.'}};reader.readAsDataURL(file)});
-$('clearBackground').addEventListener('click',()=>{localStorage.removeItem('predatorChatBackground');document.body.style.backgroundImage='';document.body.style.backgroundSize='';document.body.style.backgroundAttachment='';$('backgroundStatus').textContent='Háttérkép törölve.'});applySavedBackground();
+async function loadSharedBackground(){
+  const {data,error}=await db
+    .from('chat_background')
+    .select('background_type,background_value')
+    .eq('id',1)
+    .maybeSingle();
 
+  if(error){
+    $('backgroundStatus').textContent='Betöltési hiba: '+error.message;
+    return;
+  }
+
+  if(data) applySharedBackground(
+    data.background_type,
+    data.background_value
+  );
+}
+
+function applySharedBackground(type,value){
+  document.body.style.backgroundImage='';
+  document.body.style.backgroundColor='#101012';
+
+  if(type==='image' && value){
+    document.body.style.backgroundImage=
+      'linear-gradient(#09090c88,#09090c99),url("'+value+'")';
+    document.body.style.backgroundSize='cover';
+    document.body.style.backgroundPosition='center';
+    document.body.style.backgroundAttachment='fixed';
+  }else{
+    document.body.style.backgroundColor=value||'#101012';
+  }
+}
+
+async function saveSharedBackground(type,value){
+  if(!currentUser){
+    $('backgroundStatus').textContent='Előbb jelentkezz be!';
+    return;
+  }
+
+  $('backgroundStatus').textContent='Mentés...';
+
+  const {error}=await db.from('chat_background').upsert({
+    id:1,
+    background_type:type,
+    background_value:value,
+    updated_at:new Date().toISOString()
+  },{onConflict:'id'});
+
+  if(error){
+    $('backgroundStatus').textContent='Hiba: '+error.message;
+    return;
+  }
+
+  applySharedBackground(type,value);
+  $('backgroundStatus').textContent=
+    'A közös háttér elmentve!';
+}
+
+$('uploadBackground').addEventListener('click',async()=>{
+  const file=$('backgroundFile').files[0];
+
+  if(!file){
+    $('backgroundStatus').textContent='Válassz ki egy képet!';
+    return;
+  }
+
+  if(!['image/jpeg','image/png','image/webp'].includes(file.type)){
+    $('backgroundStatus').textContent='JPG, PNG vagy WEBP képet válassz!';
+    return;
+  }
+
+  if(file.size>5*1024*1024){
+    $('backgroundStatus').textContent='A kép legfeljebb 5 MB lehet!';
+    return;
+  }
+
+  if(!currentUser){
+    $('backgroundStatus').textContent='Előbb jelentkezz be!';
+    return;
+  }
+
+  $('backgroundStatus').textContent='Kép feltöltése...';
+
+  const ext={
+    'image/jpeg':'jpg',
+    'image/png':'png',
+    'image/webp':'webp'
+  }[file.type];
+
+  const path=currentUser.id+'/'+Date.now()+'.'+ext;
+
+  const {data,error}=await db.storage
+    .from('chat-backgrounds')
+    .upload(path,file,{upsert:false,contentType:file.type});
+
+  if(error){
+    $('backgroundStatus').textContent='Feltöltési hiba: '+error.message;
+    return;
+  }
+
+  const {data:urlData}=db.storage
+    .from('chat-backgrounds')
+    .getPublicUrl(data.path);
+
+  await saveSharedBackground('image',urlData.publicUrl);
+});
+
+$('clearBackground').addEventListener('click',()=>{
+  saveSharedBackground('color','#101012');
+});
+
+loadSharedBackground();
 function setMemberStatus(message){$('membersStatus').textContent=message||''}
 function setPrivateStatus(message){$('privateStatus').textContent=message||''}
 async function loadMembers(){function renderOnlineMembers(){
