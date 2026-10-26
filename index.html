@@ -399,7 +399,7 @@ $('authform').addEventListener('submit', async e => {
     const { data: profile, error: lookupError } = await db
       .from('profiles')
       .select('email')
-      .ilike('display_name', username)
+      .ilike('display_name', username.trim())
       .limit(1)
       .maybeSingle();
 
