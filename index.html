@@ -619,7 +619,10 @@ async function loadMembers(){function renderOnlineMembers(){
 
     const name=document.createElement('div');
     name.className='member-name';
-    name.textContent=p.display_name||p.email||'Tag';
+   name.textContent =
+  (p.display_name && p.display_name !== 'Tag'
+    ? p.display_name
+    : (p.email ? p.email.split('@')[0] : 'Tag'));
 
     row.append(img,name);
     sideList.append(row);
