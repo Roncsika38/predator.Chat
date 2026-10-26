@@ -593,7 +593,141 @@ $('privateSendForm').addEventListener('submit',async e=>{
 });
 
 $('uploadAvatar').addEventListener('click',async()=>{if(!currentUser){$('avatarStatus').textContent='Előbb jelentkezz be.';return}const file=$('avatarFile').files[0];if(!file){$('avatarStatus').textContent='Válassz ki egy képet.';return}if(file.size>10*1024*1024){$('avatarStatus').textContent='A kép legfeljebb 10 MB lehet.';return}const ext=(file.name.split('.').pop()||'jpg').toLowerCase().replace(/[^a-z0-9]/g,'');const path=currentUser.id+'/avatar.'+ext;$('avatarStatus').textContent='Feltöltés…';const {error}=await db.storage.from('avatars').upload(path,file,{upsert:true,contentType:file.type});if(error){$('avatarStatus').textContent='Feltöltési hiba: '+error.message;return}const {data}=db.storage.from('avatars').getPublicUrl(path);const avatarUrl=data.publicUrl+'?t='+Date.now();const old=profileCache.get(String(currentUser.id))||{};const {error:profileError}=await db.from('profiles').upsert({id:currentUser.id,email:currentUser.email,display_name:old.display_name||currentUser.email.split('@')[0],avatar_url:avatarUrl},{onConflict:'id'});if(profileError){$('avatarStatus').textContent='A kép feltöltődött, de a profil mentése nem sikerült: '+profileError.message;return}profileCache.set(String(currentUser.id),{id:currentUser.id,display_name:old.display_name||currentUser.email.split('@')[0],avatar_url:avatarUrl});$('avatarPreview').src=avatarUrl;$('avatarStatus').textContent='Profilkép feltöltve. Az új üzenetek mellett már ez fog látszani.';if(currentRoom)await loadMessages()});
-async function showSession(session){if(onlinePresenceChannel){
+// PREDATOR CHAT – ZENEFELTÖLTÉS ÉS LEJÁTSZÓ
+async function loadMusicList() {
+  const list = $('musicList');
+  list.replaceChildren();
+  $('musicStatus').textContent = 'Zenék betöltése…';
+
+  const { data: folders, error } = await db.storage
+    .from('chat-music')
+    .list('', { limit: 1000 });
+
+  if (error) {
+    $('musicStatus').textContent = 'Tárhelyhiba: ' + error.message;
+    return;
+  }
+
+  const tracks = [];
+
+  for (const folder of folders || []) {
+    if (!folder.name) continue;
+
+    const { data: files, error: fileError } = await db.storage
+      .from('chat-music')
+      .list(folder.name, { limit: 1000 });
+
+    if (fileError) continue;
+
+    for (const file of files || []) {
+      if (!file.name) continue;
+
+      tracks.push({
+        path: folder.name + '/' + file.name,
+        name: file.name.replace(/^\d+-/, '')
+      });
+    }
+  }
+
+  if (!tracks.length) {
+    $('musicStatus').textContent = 'Még nincs feltöltött zene.';
+    return;
+  }
+
+  $('musicStatus').textContent = tracks.length + ' zene elérhető.';
+
+  for (const track of tracks) {
+    const row = document.createElement('div');
+    row.className = 'member-item';
+
+    const title = document.createElement('span');
+    title.textContent = track.name;
+    title.style.flex = '1';
+
+    const play = document.createElement('button');
+    play.type = 'button';
+    play.textContent = '▶ Lejátszás';
+
+    play.addEventListener('click', async () => {
+      const { data, error } = await db.storage
+        .from('chat-music')
+        .createSignedUrl(track.path, 3600);
+
+      if (error) {
+        $('musicStatus').textContent = 'Lejátszási hiba: ' + error.message;
+        return;
+      }
+
+      $('musicNowTitle').textContent = track.name;
+      $('musicPlayer').src = data.signedUrl;
+      $('musicPlayer').load();
+
+      $('musicPlayer').play().catch(() => {
+        $('musicStatus').textContent =
+          'Nyomd meg a lejátszás gombot a zene elindításához.';
+      });
+    });
+
+    row.append(title, play);
+    list.append(row);
+  }
+}
+
+$('musicUploadForm').addEventListener('submit', async e => {
+  e.preventDefault();
+
+  if (!currentUser) {
+    $('musicStatus').textContent = 'Előbb jelentkezz be.';
+    return;
+  }
+
+  const file = $('musicFile').files[0];
+
+  if (!file) {
+    $('musicStatus').textContent = 'Válassz ki egy zenefájlt.';
+    return;
+  }
+
+  if (file.size > 25 * 1024 * 1024) {
+    $('musicStatus').textContent = 'Maximum 25 MB-os zenét tölthetsz fel.';
+    return;
+  }
+
+  if (
+    !file.type.startsWith('audio/') &&
+    !/\.(mp3|wav|ogg|m4a|aac|flac)$/i.test(file.name)
+  ) {
+    $('musicStatus').textContent = 'Csak hangfájl tölthető fel.';
+    return;
+  }
+
+  const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+  const path = currentUser.id + '/' + Date.now() + '-' + safeName;
+  const button = $('musicUploadButton');
+
+  button.disabled = true;
+  $('musicStatus').textContent = 'Feltöltés folyamatban…';
+
+  try {
+    const { error } = await db.storage
+      .from('chat-music')
+      .upload(path, file, {
+        contentType: file.type || 'audio/mpeg',
+        upsert: false
+      });
+
+    if (error) {
+      $('musicStatus').textContent = 'Feltöltési hiba: ' + error.message;
+      return;
+    }
+
+    $('musicFile').value = '';
+    await loadMusicList();
+    $('musicStatus').textContent = 'Sikeres feltöltés!';
+  } finally {
+    button.disabled = false;
+  }
+});async function showSession(session){if(onlinePresenceChannel){
   db.removeChannel(onlinePresenceChannel);
   onlinePresenceChannel=null;
 }
