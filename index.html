@@ -297,7 +297,24 @@ button {
     <h2>Profilom</h2><img id="avatarPreview" class="avatar" src="https://placehold.co/120x120?text=Profil" alt="Profilkép">
     <label for="displayName">Megjelenő név</label><input id="displayName" maxlength="32" placeholder="A chatben látható neved"><button type="button" id="saveDisplayName">Név mentése</button><p id="displayNameStatus" class="muted small"></p>
     <label for="avatarFile">Profilkép kiválasztása</label><input id="avatarFile" type="file" accept="image/png,image/jpeg,image/webp,image/gif">
-    <button type="button" id="uploadAvatar">Profilkép feltöltése</button><p id="avatarStatus"></p><p id="profileEmail"></p><hr><h3>Háttérkép</h3><p class="muted small">A háttérkép ezen a böngészőn lesz elmentve.</p><input id="backgroundFile" type="file" accept="image/png,image/jpeg,image/webp"><button type="button" id="uploadBackground">Háttérkép beállítása</button><button type="button" id="clearBackground">Háttérkép törlése</button><p id="backgroundStatus" class="muted small"></p>
+    <button type="button" id="uploadAvatar">Profilkép feltöltése</button><p id="avatarStatus"></p><p id="profileEmail"></p><hr><h3>Háttérkép</h3><p class="muted small">A háttérkép ezen a böngészőn lesz elmentve.</p><input id="backgroundFile"
+       <section class="panel" id="sharedBackground">
+  <h2>🎨 Közös chat-háttér</h2>
+  <p>Minden tagnál megjelenő háttér beállítása.</p>
+  <label for="sharedBgColor">Háttérszín</label>
+  <input id="sharedBgColor" type="color" value="#101012">
+  <button type="button" id="sharedBgSaveColor">Szín beállítása mindenkinek</button>
+  <p>Gyors színek:</p>
+  <button type="button" data-shared-color="#101012">Fekete</button>
+  <button type="button" data-shared-color="#3b0710">Sötétpiros</button>
+  <button type="button" data-shared-color="#102033">Sötétkék</button>
+  <button type="button" data-shared-color="#302044">Lila</button>
+  <label for="sharedBgFile">Saját háttérkép</label>
+  <input id="sharedBgFile" type="file" accept="image/png,image/jpeg,image/webp">
+  <button type="button" id="sharedBgUpload">Kép beállítása mindenkinek</button>
+  <button type="button" id="sharedBgReset">Alap háttér visszaállítása</button>
+  <p id="sharedBgStatus" role="status"></p>
+</section>                                                                                                                                                                                                                  type="file" accept="image/png,image/jpeg,image/webp"><button type="button" id="uploadBackground">Háttérkép beállítása</button><button type="button" id="clearBackground">Háttérkép törlése</button><p id="backgroundStatus" class="muted small"></p>
   </section>
   <section id="admin" class="panel hidden">
     <h2>Adminpanel</h2><p id="adminStatus" role="status">Adminjog ellenőrzése…</p>
@@ -858,6 +875,127 @@ startOnlinePresence();
 }
 db.auth.onAuthStateChange((event,session)=>{if(event==='PASSWORD_RECOVERY'){showRecovery(true);return}if(event==='SIGNED_OUT')recoveryMode=false;setTimeout(()=>showSession(session),0)});
 (async()=>{if(!explainUrlError()){const {data,error}=await db.auth.getSession();if(error)status('Munkamenet-hiba: '+error.message);if(data?.session)await showSession(data.session)}})();
+
+// Predator Chat – közös háttérbeállítás
+(async function () {
+  const colorInput = document.getElementById('sharedBgColor');
+  const fileInput = document.getElementById('sharedBgFile');
+  const status = document.getElementById('sharedBgStatus');
+
+  if (!colorInput || !fileInput || !status) return;
+
+  function showBackground(type, value) {
+    if (type === 'image') {
+      document.body.style.backgroundImage =
+        'linear-gradient(#09090c66,#09090c88),url("' + value + '")';
+      document.body.style.backgroundSize = 'cover';
+      document.body.style.backgroundPosition = 'center';
+      document.body.style.backgroundAttachment = 'fixed';
+    } else {
+      document.body.style.backgroundImage = '';
+      document.body.style.backgroundColor = value || '#101012';
+    }
+  }
+
+  async function saveBackground(type, value) {
+    if (!window.currentUser) {
+      status.textContent = 'Előbb jelentkezz be!';
+      return;
+    }
+
+    status.textContent = 'Mentés...';
+
+    const { error } = await db
+      .from('chat_background')
+      .upsert({
+        id: 1,
+        background_type: type,
+        background_value: value,
+        updated_at: new Date().toISOString()
+      }, { onConflict: 'id' });
+
+    if (error) {
+      status.textContent = 'Mentési hiba: ' + error.message;
+      return;
+    }
+
+    showBackground(type, value);
+    status.textContent = 'A közös háttér elmentve!';
+  }
+
+  document.getElementById('sharedBgSaveColor').addEventListener('click', () => {
+    saveBackground('color', colorInput.value);
+  });
+
+  document.querySelectorAll('[data-shared-color]').forEach(button => {
+    button.addEventListener('click', () => {
+      colorInput.value = button.dataset.sharedColor;
+      saveBackground('color', button.dataset.sharedColor);
+    });
+  });
+
+  document.getElementById('sharedBgUpload').addEventListener('click', async () => {
+    const file = fileInput.files[0];
+
+    if (!file) {
+      status.textContent = 'Előbb válassz ki egy képet!';
+      return;
+    }
+
+    if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
+      status.textContent = 'JPG, PNG vagy WEBP képet válassz!';
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      status.textContent = 'A kép legfeljebb 5 MB lehet!';
+      return;
+    }
+
+    const extension = file.type === 'image/jpeg' ? 'jpg' :
+      file.type === 'image/png' ? 'png' : 'webp';
+
+    const path = Date.now() + '-' + Math.random().toString(36).slice(2) + '.' + extension;
+
+    status.textContent = 'Kép feltöltése...';
+
+    const { data, error } = await db.storage
+      .from('chat-backgrounds')
+      .upload(path, file, { contentType: file.type });
+
+    if (error) {
+      status.textContent = 'Feltöltési hiba: ' + error.message;
+      return;
+    }
+
+    const { data: publicUrl } = db.storage
+      .from('chat-backgrounds')
+      .getPublicUrl(data.path);
+
+    await saveBackground('image', publicUrl.publicUrl);
+  });
+
+  document.getElementById('sharedBgReset').addEventListener('click', () => {
+    colorInput.value = '#101012';
+    saveBackground('color', '#101012');
+  });
+
+  const { data, error } = await db
+    .from('chat_background')
+    .select('background_type, background_value')
+    .eq('id', 1)
+    .maybeSingle();
+
+  if (error) {
+    status.textContent = 'Betöltési hiba: ' + error.message;
+  } else if (data) {
+    showBackground(data.background_type, data.background_value);
+    if (data.background_type === 'color') {
+      colorInput.value = data.background_value;
+    }
+  }
+})();
 </script>
+
 </body>
 </html>
