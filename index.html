@@ -436,7 +436,24 @@ async function loadMembers(){
       const opt=document.createElement('option');opt.value=String(p.id);opt.textContent=p.display_name||p.email||('Tag '+String(p.id).slice(0,8));recipients.append(opt);
     }
   }
-  if(previous && [...recipients.options].some(o=>o.value===previous))recipients.value=previous;
+  const sideList=$('onlineMemberList');
+sideList.replaceChildren();
+
+for(const p of data||[]){
+  const row=document.createElement('div');
+  row.className='member-item';
+
+  const name=document.createElement('div');
+  name.className='member-name';
+
+  const label=String(p.id)===String(currentUser.id)?'Te':(p.display_name||p.email||'Tag');
+  name.textContent=label;
+
+  row.append(name);
+  sideList.append(row);
+}
+
+$('onlineMembersStatus').textContent=(data||[]).length+' tag betöltve.';
   if(!others.length){setMemberStatus('Másik tag nem látható. Ellenőrizni kell, hogy a profiles SELECT szabály engedi-e a tagok olvasását.');return}
   setMemberStatus(others.length+' tag betöltve.');
   for(const p of others){
