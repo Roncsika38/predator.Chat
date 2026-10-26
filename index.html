@@ -867,7 +867,7 @@ $('onlineMembersStatus').textContent='Nincs online tag';
   $('profileEmail').textContent=currentUser.email||'';$('displayName').value=profileCache.get(String(currentUser.id))?.display_name||currentUser.email?.split('@')[0]||'';
   await loadProfileCache();
   const oldProfile=profileCache.get(String(currentUser.id))||{};
-  const {error:ownProfileError}=await db.from('profiles').upsert({id:currentUser.id,email:currentUser.email,display_name:document.getElementById('username').value.trim()||oldProfile.display_name||currentUser.email?.split('@')[0]||'Tag'avatar_url:oldProfile.avatar_url||null},{onConflict:'id'});
+  const {error:ownProfileError}=await db.from('profiles').upsert({id:currentUser.id,email:currentUser.email,display_name:document.getElementById('username').value.trim()||oldProfile.display_name||currentUser.email?.split('@')[0]||'Tag',avatar_urll:oldProfile.avatar_url||null},{onConflict:'id'});
   if(ownProfileError)console.warn('Saját profil létrehozása nem sikerült:',ownProfileError.message);
   await loadProfileCache();
 await checkAdmin();
