@@ -240,18 +240,20 @@ button {
   <div id="userbar" class="muted">Nincs bejelentkezve</div>
   <button id="logout" class="hidden" type="button">Kilépés</button>
 </header>
-<main>
+<main> <
 <section id="auth" class="panel auth">
-  <div id="normalAuth">
-    <h2>Belépés / Regisztráció</h2>
-    <form id="authform" class="form">
-     <input id="username" type="text" placeholder="Felhasználónév" autocomplete="username">
-     <input id="username" type="text" placeholder="Felhasználónév" required minlength="3" maxlength="24">
-      <input id="email" type="email" placeholder="E-mail-cím" required autocomplete="email">
-      <input id="password" type="password" placeholder="Jelszó (legalább 6 karakter)" minlength="6" required autocomplete="current-password">
-      <div class="actions"><button type="submit">Bejelentkezés</button><button type="button" id="register">Regisztráció</button></div>
-      <button type="button" id="forgotPassword">Elfelejtett jelszó?</button>
-    </form>
+  
+<form id="authform" class="form">
+  <input id="username" type="text" placeholder="Felhasználónév" required minlength="3" maxlength="24" autocomplete="username">
+  <input id="password" type="password" placeholder="Jelszó (legalább 6 karakter)" minlength="6" required autocomplete="current-password">
+  <div class="actions">
+    <button type="submit">Bejelentkezés</button>
+    <button type="button" id="register">Regisztráció</button>
+  </div>
+
+
+   
+  
   </div>
   <div id="recoveryForm" class="hidden">
     <h2>Új jelszó beállítása</h2><p>Adj meg egy új, legalább 6 karakteres jelszót.</p>
