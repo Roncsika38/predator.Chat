@@ -446,7 +446,7 @@ for(const p of data||[]){
   const name=document.createElement('div');
   name.className='member-name';
 
-  const label=String(p.id)===String(currentUser.id)?'Te':(p.display_name||p.email||'Tag');
+ const label=String(p.id)===String(currentUser.id)?(p.display_name||p.email||'Predator'):(p.display_name||p.email||'Tag '+String(p.id).slice(0,6));
   name.textContent=label;
 
   row.append(name);
