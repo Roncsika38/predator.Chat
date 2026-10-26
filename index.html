@@ -570,7 +570,13 @@ $('privateSendForm').addEventListener('submit',async e=>{
 });
 
 $('uploadAvatar').addEventListener('click',async()=>{if(!currentUser){$('avatarStatus').textContent='Előbb jelentkezz be.';return}const file=$('avatarFile').files[0];if(!file){$('avatarStatus').textContent='Válassz ki egy képet.';return}if(file.size>10*1024*1024){$('avatarStatus').textContent='A kép legfeljebb 10 MB lehet.';return}const ext=(file.name.split('.').pop()||'jpg').toLowerCase().replace(/[^a-z0-9]/g,'');const path=currentUser.id+'/avatar.'+ext;$('avatarStatus').textContent='Feltöltés…';const {error}=await db.storage.from('avatars').upload(path,file,{upsert:true,contentType:file.type});if(error){$('avatarStatus').textContent='Feltöltési hiba: '+error.message;return}const {data}=db.storage.from('avatars').getPublicUrl(path);const avatarUrl=data.publicUrl+'?t='+Date.now();const old=profileCache.get(String(currentUser.id))||{};const {error:profileError}=await db.from('profiles').upsert({id:currentUser.id,email:currentUser.email,display_name:old.display_name||currentUser.email.split('@')[0],avatar_url:avatarUrl},{onConflict:'id'});if(profileError){$('avatarStatus').textContent='A kép feltöltődött, de a profil mentése nem sikerült: '+profileError.message;return}profileCache.set(String(currentUser.id),{id:currentUser.id,display_name:old.display_name||currentUser.email.split('@')[0],avatar_url:avatarUrl});$('avatarPreview').src=avatarUrl;$('avatarStatus').textContent='Profilkép feltöltve. Az új üzenetek mellett már ez fog látszani.';if(currentRoom)await loadMessages()});
-async function showSession(session){
+async function showSession(session){if(onlinePresenceChannel){
+  db.removeChannel(onlinePresenceChannel);
+  onlinePresenceChannel=null;
+}
+onlineUserIds.clear();
+$('onlineMemberList').replaceChildren();
+$('onlineMembersStatus').textContent='Nincs online tag';
   currentUser=session?.user||null;const loggedIn=!!currentUser;
   $('auth').classList.toggle('hidden',loggedIn||recoveryMode);$('app').classList.toggle('hidden',!loggedIn||recoveryMode);$('logout').classList.toggle('hidden',!loggedIn);$('userbar').textContent=loggedIn?currentUser.email:'Nincs bejelentkezve';
   if(!loggedIn){if(messageChannel){db.removeChannel(messageChannel);messageChannel=null}currentRoom=null;$('messages').replaceChildren();$('adminTab').classList.add('hidden');$('roomAdminTools').classList.add('hidden');$('roleAdminTools').classList.add('hidden');return}
