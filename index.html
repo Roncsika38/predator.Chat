@@ -241,8 +241,31 @@ button {
 </section>
 <section id="app" class="hidden">
   <nav class="tabs">
-    <button class="active" data-tab="chat">💬 Chat</button><button data-tab="members">👥 Tagok</button><button data-tab="private">✉ Üzenetek</button><button data-tab="profile">👤 Profil</button><button data-tab="admin" id="adminTab" class="hidden">⚙ Admin</button>
-  </nav>
+  <button data-tab="music">🎵 Zene</button> <button data-tab="members">👥 Tagok</button><button data-tab="private">✉ Üzenetek</button><button data-tab="profile">👤 Profil</button><button data-tab="admin" id="adminTab" class="hidden">⚙ Admin</button>
+  </nav><section id="music" class="panel hidden">
+  <h2>🎵 Predator Zene</h2>
+  <p>Tölts fel zenét, vagy hallgasd meg a tagok által feltöltött zenéket!</p>
+
+  <form id="musicUploadForm">
+    <input
+      id="musicFile"
+      type="file"
+      accept=".mp3,.wav,.ogg,.m4a,.aac,.flac,audio/*"
+      required
+    >
+    <button type="submit" id="musicUploadButton">
+      🎵 Zene feltöltése
+    </button>
+  </form>
+
+  <p id="musicStatus" role="status"></p>
+
+  <h3 id="musicNowTitle">Válassz zenét</h3>
+  <audio id="musicPlayer" controls preload="none" style="width:100%"></audio>
+
+  <h3>Feltöltött zenék</h3>
+  <div id="musicList" class="member-list"></div>
+</section>
   
  <section id="chat" class="layout predator-layout">
   <aside class="panel">
