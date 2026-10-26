@@ -303,7 +303,7 @@ const SUPABASE_URL = 'https://tmcbfjpwzeafixchsbqt.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_qRH3wqaMjDd0gPdvvzElBw_luhhqZLP';
 const db = window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
 const $ = id => document.getElementById(id);
-let currentUser=null,currentRoom=null,roomList=[],messageChannel=null,recoveryMode=false,privateRecipientId='';
+let currentUser=null,currentRoom=null,roomList=[],messageChannel=null,recoveryMode=false,privateRecipientId='',onlinePresenceChannel=null,onlineUserIds=new Set();
 const profileCache=new Map();
 const DEFAULT_AVATAR='data:image/svg+xml;charset=UTF-8,'+encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="80" height="80" viewBox="0 0 80 80"><rect width="80" height="80" rx="40" fill="#29292f"/><circle cx="40" cy="29" r="14" fill="#a6a6ad"/><path d="M13 72c2-17 13-25 27-25s25 8 27 25" fill="#a6a6ad"/></svg>');
 function status(message){$('status').textContent=message||''}
@@ -421,7 +421,74 @@ $('clearBackground').addEventListener('click',()=>{localStorage.removeItem('pred
 
 function setMemberStatus(message){$('membersStatus').textContent=message||''}
 function setPrivateStatus(message){$('privateStatus').textContent=message||''}
-async function loadMembers(){
+async function loadMembers(){function renderOnlineMembers(){
+  const sideList=$('onlineMemberList');
+  if(!sideList)return;
+  sideList.replaceChildren();
+
+  const ids=new Set(onlineUserIds);
+  if(currentUser)ids.add(String(currentUser.id));
+
+  let count=0;
+  for(const id of ids){
+    const p=profileCache.get(String(id));
+    if(!p)continue;
+
+    const row=document.createElement('div');
+    row.className='member-item';
+
+    const img=document.createElement('img');
+    img.alt='Profilkép';
+    img.src=p.avatar_url||DEFAULT_AVATAR;
+
+    const name=document.createElement('div');
+    name.className='member-name';
+    name.textContent=p.display_name||p.email||'Tag';
+
+    row.append(img,name);
+    sideList.append(row);
+    count++;
+  }
+
+  $('onlineMembersStatus').textContent=count+' online tag';
+}
+
+function startOnlinePresence(){
+  if(!currentUser)return;
+
+  if(onlinePresenceChannel){
+    db.removeChannel(onlinePresenceChannel);
+    onlinePresenceChannel=null;
+  }
+
+  const channel=db.channel('predator-online-users',{
+    config:{presence:{key:String(currentUser.id)}}
+  });
+
+  onlinePresenceChannel=channel;
+
+  channel.on('presence',{event:'sync'},()=>{
+    onlineUserIds.clear();
+    const state=channel.presenceState();
+
+    for(const [key,entries] of Object.entries(state)){
+      for(const entry of entries){
+        onlineUserIds.add(String(entry.user_id||key));
+      }
+    }
+
+    renderOnlineMembers();
+  });
+
+  channel.subscribe(async status=>{
+    if(status==='SUBSCRIBED'){
+      await channel.track({
+        user_id:String(currentUser.id),
+        online_at:new Date().toISOString()
+      });
+    }
+  });
+}
   if(!currentUser)return;
   setMemberStatus('Tagok betöltése…');
   const {data,error}=await db.from('profiles').select('id,display_name,email,avatar_url,role').order('display_name',{ascending:true}).limit(500);
