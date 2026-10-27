@@ -1,5 +1,3 @@
-````
-```
 <!DOCTYPE html>
 <html lang="hu">
 <head>
@@ -314,6 +312,13 @@ h2,h3{margin-top:6px;color:#fff}
 @media(min-width:1200px){main{padding-left:18px;padding-right:18px}.predator-layout{grid-template-columns:minmax(230px,21%) minmax(0,1fr) minmax(245px,23%)}}
 @media(max-width:900px){.predator-layout{grid-template-columns:minmax(0,1fr) minmax(0,1.8fr)}.predator-layout>.predator-members{grid-column:1/-1;max-height:none}.predator-layout>section{grid-column:2;grid-row:1 / span 2}.predator-layout>aside:first-child{grid-column:1;grid-row:1}.predator-layout>.predator-members{grid-column:1;grid-row:2}#messages{height:50vh}}
 @media(max-width:620px){header{min-height:65px;padding:10px;gap:8px}h1{font-size:19px;letter-spacing:0}#userbar{max-width:25vw;font-size:10px}header>button{padding:8px;font-size:12px}main{padding:8px}.tabs{gap:5px;padding:5px}.tabs button{font-size:12px;padding:9px 11px;min-height:40px}.predator-layout{display:flex;flex-direction:column;gap:8px}.predator-layout>aside,.predator-layout>section{padding:11px}.predator-layout>section{order:1}.predator-layout>aside:first-child{order:0}.predator-layout>.predator-members{order:2;max-height:300px}.predator-layout>section{grid-column:auto;grid-row:auto}#messages{height:48vh;min-height:240px;max-height:500px}.msg-avatar{width:38px;height:38px;flex-basis:38px}.msg-content .message-body{font-size:15px}.composer{position:sticky;bottom:3px}.composer input{font-size:16px}.private-layout{grid-template-columns:1fr}}
+
+.member-name,.clickable-name,.msg-head b{cursor:pointer}
+.member-name:hover,.clickable-name:hover,.msg-head b:hover{text-decoration:underline;text-decoration-color:#ff243c}
+#memberActionBackdrop{position:fixed;inset:0;z-index:11000;display:none;align-items:center;justify-content:center;padding:14px;background:#000b}
+#memberActionCard{width:min(460px,100%);max-height:90dvh;overflow:auto;background:#0b0b10;border:1px solid #ff243c;border-radius:16px;padding:16px;box-shadow:0 15px 60px #000}
+#memberActionCard .actions{margin-top:10px}#memberActionCard button{min-width:100px}
+#moderationStatus{white-space:pre-wrap;color:#ff9aa8;font-size:13px}
 </style>
 
 </head>
@@ -456,7 +461,7 @@ const SUPABASE_URL = 'https://tmcbfjpwzeafixchsbqt.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_qRH3wqaMjDd0gPdvvzElBw_luhhqZLP';
 const db = window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
 const $ = id => document.getElementById(id);
-let currentUser=null,currentRoom=null,roomList=[],messageChannel=null,recoveryMode=false,privateRecipientId='',onlinePresenceChannel=null,onlineUserIds=new Set();
+let currentUser=null,currentRoom=null,roomList=[],messageChannel=null,recoveryMode=false,privateRecipientId='',onlinePresenceChannel=null,onlineUserIds=new Set(),isPredatorAdmin=false,isPredatorOwner=false;
 const profileCache=new Map();
 const DEFAULT_AVATAR='data:image/svg+xml;charset=UTF-8,'+encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="80" height="80" viewBox="0 0 80 80"><rect width="80" height="80" rx="40" fill="#29292f"/><circle cx="40" cy="29" r="14" fill="#a6a6ad"/><path d="M13 72c2-17 13-25 27-25s25 8 27 25" fill="#a6a6ad"/></svg>');
 function status(message){$('status').textContent=message||''}
@@ -480,20 +485,18 @@ $('authform').addEventListener('submit', async e => {
   status('Belépés folyamatban…');
 
   try {
-  const { data: profile, error: lookupError } = await db
-  .rpc('get_login_email', { p_username: username.trim() });
-
-const loginEmail = profile;
-
-    if (lookupError) {
-      status('Hiba a felhasználó keresésekor: ' + lookupError.message);
-      return;
-    }
-
-    if (!loginEmail) {
-      status('Nem található ilyen felhasználónév. Ellenőrizd a nevet.');
-      return;
-    }
+  const { data: profile, error: lookupError } = await db.rpc('get_login_email', { p_username: username.trim() });
+  let loginEmail = typeof profile === 'string' ? profile : (Array.isArray(profile) ? (profile[0]?.email || profile[0]?.get_login_email) : (profile?.email || profile?.get_login_email));
+  // Ha az RPC nem adott vissza e-mailt, keressük meg a profilt név alapján is.
+  if (!loginEmail) {
+    const { data: found, error: profileLookupError } = await db.from('profiles')
+      .select('email').ilike('display_name', username.trim()).limit(1).maybeSingle();
+    if (!profileLookupError && found?.email) loginEmail = found.email;
+  }
+  if (!loginEmail) {
+    status(lookupError ? 'A felhasználónév-kereső SQL-függvény hibája: ' + lookupError.message + '. A mellékelt SQL-t is futtasd le a Supabase SQL Editorban.' : 'Nem található ilyen felhasználónév. Ellenőrizd a regisztrációkor használt nevet.');
+    return;
+  }
 
    const { error } = await db.auth.signInWithPassword({
  email: loginEmail,
@@ -618,6 +621,7 @@ async function checkAdmin(){
     return;
   }
   const isAdmin=data?.role==='admin'||isOwner;
+  isPredatorOwner=!!isOwner; isPredatorAdmin=!!isAdmin;
   $('adminTab').classList.toggle('hidden',!isAdmin);
   $('roomAdminTools').classList.toggle('hidden',!isAdmin);
   $('roleAdminTools').classList.toggle('hidden',!isOwner);
@@ -811,6 +815,8 @@ function renderOnlineMembers(){
     const name=document.createElement('div');
     name.className='member-name';
     name.textContent=p.display_name||(p.email?p.email.split('@')[0]:'Tag');
+    name.classList.add('clickable-name'); name.title='Kattints a tagra'; name.addEventListener('click',()=>openMemberActions(p));
+    row.style.cursor='pointer'; row.addEventListener('click',()=>openMemberActions(p));
     row.append(img,name);
     sideList.append(row);
     count++;
@@ -892,8 +898,10 @@ async function loadMembers(){
     img.alt='Profilkép';
     img.src=p.avatar_url||DEFAULT_AVATAR;
     const name=document.createElement('div');
-    name.className='member-name';
+    name.className='member-name clickable-name';
     name.textContent=p.display_name||p.email||('Tag '+String(p.id).slice(0,8));
+    name.title='Kattints a profilra és a privát üzenethez';
+    name.addEventListener('click',()=>openMemberActions(p));
     row.append(img,name);
     if(String(p.id)!==String(currentUser.id)){
       const btn=document.createElement('button');
@@ -1088,6 +1096,14 @@ onlineUserIds.clear();
 $('onlineMemberList').replaceChildren();
 $('onlineMembersStatus').textContent='Nincs online tag';
   currentUser=session?.user||null;const loggedIn=!!currentUser;
+  if(loggedIn){
+    const {data:moderation}=await db.from('predator_moderation').select('action,banned_until,reason').eq('user_id',currentUser.id).maybeSingle();
+    if(moderation && moderation.banned_until && (moderation.banned_until==='infinity' || new Date(moderation.banned_until)>new Date())){
+      await db.auth.signOut(); currentUser=null; $('auth').classList.remove('hidden'); $('app').classList.add('hidden');
+      status(moderation.banned_until==='infinity'?'A fiók véglegesen tiltva van.':'A fiók ideiglenesen tiltva van eddig: '+new Date(moderation.banned_until).toLocaleString('hu-HU'));
+      return;
+    }
+  }
   $('auth').classList.toggle('hidden',loggedIn||recoveryMode);$('app').classList.toggle('hidden',!loggedIn||recoveryMode);$('logout').classList.toggle('hidden',!loggedIn);$('userbar').textContent=loggedIn?currentUser.email:'Nincs bejelentkezve';
   if(!loggedIn){if(messageChannel){db.removeChannel(messageChannel);messageChannel=null}currentRoom=null;$('messages').replaceChildren();$('adminTab').classList.add('hidden');$('roomAdminTools').classList.add('hidden');$('roleAdminTools').classList.add('hidden');return}
   $('profileEmail').textContent=currentUser.email||'';$('displayName').value=profileCache.get(String(currentUser.id))?.display_name||currentUser.email?.split('@')[0]||'';
@@ -1360,9 +1376,46 @@ async function sendPopupPrivateMessage(event) {
   }
 }
 
+
+// Tagnév kattintása: privát üzenet és admin moderálási lehetőségek.
+function ensureMemberActionModal(){
+  if($('memberActionBackdrop')) return;
+  const wrap=document.createElement('div');wrap.id='memberActionBackdrop';
+  wrap.innerHTML=`<section id="memberActionCard" role="dialog" aria-modal="true" aria-labelledby="memberActionTitle">
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:10px"><h2 id="memberActionTitle">Tag</h2><button id="memberActionClose" type="button">Bezárás ✕</button></div>
+    <p id="memberActionInfo" class="muted small"></p>
+    <div class="actions"><button id="memberPrivateButton" type="button">✉ Privát üzenet</button></div>
+    <div id="moderationTools" class="hidden"><hr><h3>🛡 Moderálás</h3><p class="muted small">A moderálás az adatbázisban rögzül. Ehhez a Supabase-ben beállított moderálási SQL-függvény szükséges.</p>
+      <div class="actions"><button type="button" data-mod="kick">Kidobás</button><button type="button" data-mod="10">10 perc</button><button type="button" data-mod="30">30 perc</button><button type="button" data-mod="60">1 óra</button><button type="button" data-mod="perm">Végleges tiltás</button><button type="button" data-mod="unban" style="background:#333">Tiltás feloldása</button></div>
+    </div><p id="moderationStatus" role="status"></p></section>`;
+  document.body.append(wrap);
+  $('memberActionClose').addEventListener('click',()=>wrap.style.display='none');
+  wrap.addEventListener('click',e=>{if(e.target===wrap)wrap.style.display='none'});
+  $('memberPrivateButton').addEventListener('click',()=>{if(activeMemberProfile){wrap.style.display='none';if(String(activeMemberProfile.id)!==String(currentUser?.id))openPrivatePopup(activeMemberProfile)}});
+  wrap.querySelectorAll('[data-mod]').forEach(b=>b.addEventListener('click',()=>moderateMember(b.dataset.mod)));
+}
+let activeMemberProfile=null;
+function openMemberActions(profile){
+  if(!currentUser||!profile?.id)return;
+  activeMemberProfile=profile;ensureMemberActionModal();
+  $('memberActionTitle').textContent='👤 '+(profile.display_name||profile.email||'Tag');
+  $('memberActionInfo').textContent=(profile.email||'')+(String(profile.id)===String(currentUser.id)?' • Saját profil':'');
+  $('memberPrivateButton').classList.toggle('hidden',String(profile.id)===String(currentUser.id));
+  $('moderationTools').classList.toggle('hidden',!isPredatorAdmin||String(profile.id)===String(currentUser.id)||String(profile.id)===OWNER_USER_ID);
+  $('moderationStatus').textContent='';$('memberActionBackdrop').style.display='flex';
+}
+async function moderateMember(action){
+  if(!currentUser||!isPredatorAdmin||!activeMemberProfile)return;
+  const labels={kick:'kidobás',10:'10 perces tiltás',30:'30 perces tiltás',60:'1 órás tiltás',perm:'végleges tiltás',unban:'tiltás feloldása'};
+  if(!confirm('Biztosan végrehajtod: '+labels[action]+' – '+(activeMemberProfile.display_name||activeMemberProfile.email||'tag')+'?'))return;
+  $('moderationStatus').textContent='Moderálás folyamatban…';
+  const duration=action==='perm'?-1:action==='unban'?0:action==='kick'?0:Number(action);
+  const {data,error}=await db.rpc('moderate_predator_user',{p_user_id:activeMemberProfile.id,p_action:action,p_duration_minutes:duration});
+  if(error){$('moderationStatus').textContent='Nem sikerült moderálni: '+error.message+'\nA Supabase SQL Editorban futtatni kell a mellékelt moderálási SQL-t.';return}
+  $('moderationStatus').textContent=data?.message||('Sikeres művelet: '+labels[action]+'.');
+}
+
 </script>
 
 </body>
 </html>
-```
-````
