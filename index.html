@@ -1,3 +1,4 @@
+```
 <!DOCTYPE html>
 <html lang="hu">
 <head>
@@ -236,6 +237,24 @@ button {
 }
   
   </style>
+
+<style>
+#privatePopupBackdrop{position:fixed;inset:0;background:#0009;z-index:10000;display:none;align-items:center;justify-content:center;padding:14px}
+#privatePopup{width:min(520px,100%);height:min(650px,88dvh);background:#15151b;border:1px solid #ed2438;border-radius:16px;box-shadow:0 20px 70px #000b;display:flex;flex-direction:column;overflow:hidden}
+#privatePopupHeader{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:13px 15px;background:#09090c;border-bottom:1px solid #ed2438}
+#privatePopupTitle{font-weight:bold;overflow-wrap:anywhere}
+#privatePopupClose{padding:6px 11px;flex:0 0 auto}
+#privatePopupStatus{padding:5px 13px;color:#ff9aa8;font-size:12px;min-height:24px}
+#privatePopupMessages{flex:1;min-height:0;overflow:auto;padding:10px;display:flex;flex-direction:column;gap:8px}
+.private-popup-message{max-width:88%;align-self:flex-start;background:#24242c;border:1px solid #393943;border-radius:12px;padding:9px 11px;overflow-wrap:anywhere;white-space:pre-wrap}
+.private-popup-message.mine{align-self:flex-end;background:#541521;border-color:#8b2435}
+.private-popup-time{display:block;font-size:10px;color:#c0c0ca;margin-top:4px}
+#privatePopupForm{display:flex;gap:8px;padding:10px;border-top:1px solid #34343e;background:#0d0d11}
+#privatePopupInput{flex:1;min-width:0}
+#privatePopupForm button{flex:0 0 auto}
+@media(max-width:600px){#privatePopupBackdrop{padding:0}#privatePopup{width:100%;height:100dvh;max-height:100dvh;border-radius:0}#privatePopupForm{padding-bottom:max(10px,env(safe-area-inset-bottom))}}
+</style>
+
 </head>
 <body>
 <header>
@@ -246,7 +265,7 @@ button {
 <main>
 <section id="auth" class="panel auth">
   
-<form id="authform" class="form">
+<div id="normalAuth"><form id="authform" class="form">
   <input id="username" type="text" placeholder="Felhasználónév" required minlength="3" maxlength="24" autocomplete="username">
   <input id="password" type="password" placeholder="Jelszó (legalább 6 karakter)" minlength="6" required autocomplete="current-password">
   <div class="actions">
@@ -726,12 +745,7 @@ async function loadMembers(){
       const btn=document.createElement('button');
       btn.type='button';
       btn.textContent='Privát üzenet';
-      btn.addEventListener('click',()=>{
-        document.querySelector('[data-tab="private"]').click();
-        $('privateRecipient').value=String(p.id);
-        privateRecipientId=String(p.id);
-        loadPrivateMessages();
-      });
+      btn.addEventListener('click', () => openPrivatePopup(p));
       row.append(btn);
     }
     list.append(row);
@@ -1055,75 +1069,143 @@ db.auth.onAuthStateChange((event,session)=>{if(event==='PASSWORD_RECOVERY'){show
     }
   }
 })();
-// Predator Chat chatbotgomb és beszélgetési ablak
-const botButton = document.createElement('button');
-botButton.textContent = '🤖 Chatbot';
-botButton.style.cssText =
-  'position:fixed;right:20px;bottom:20px;z-index:9999;background:#d71935;color:white;border:1px solid #ff334f;border-radius:12px;padding:14px;cursor:pointer;font-weight:bold;';
 
-const botPanel = document.createElement('div');
-botPanel.style.cssText =
-  'display:none;position:fixed;right:20px;bottom:80px;width:min(340px,90vw);height:420px;max-height:70vh;z-index:9999;background:#111;color:white;border:1px solid #e21b36;border-radius:14px;padding:12px;box-shadow:0 0 20px #a00020;';
+// Felugró privát üzenetablak – a beszélgetés az oldalon belül, frissítés nélkül működik.
+let privatePopupChannel = null;
+let privatePopupTarget = null;
+let privatePopupBusy = false;
 
-botPanel.innerHTML = `
-  <div style="display:flex;justify-content:space-between;align-items:center;color:#ff334f;font-weight:bold">
-    <span>🤖 Predator Chatbot</span>
-    <button id="botClose" style="background:#b20e24;color:white;border:0;padding:6px 10px">X</button>
-  </div>
-  <div id="botMessages" style="height:290px;overflow:auto;margin:10px 0;padding:8px;background:#080808;border-radius:8px">
-    <p>Bot: Szia! Miben segíthetek?</p>
-  </div>
-  <form id="botForm" style="display:flex;gap:6px">
-    <input id="botInput" placeholder="Írj a chatbotnak..." required
-      style="min-width:0;flex:1;background:#222;color:white;border:1px solid #555;border-radius:8px;padding:9px">
-    <button style="background:#d71935;color:white;border:0;border-radius:8px;padding:9px">Küldés</button>
-  </form>
-`;
+function ensurePrivatePopup() {
+  if ($('privatePopupBackdrop')) return;
+  const backdrop = document.createElement('div');
+  backdrop.id = 'privatePopupBackdrop';
+  backdrop.innerHTML = `
+    <section id="privatePopup" role="dialog" aria-modal="true" aria-labelledby="privatePopupTitle">
+      <header id="privatePopupHeader">
+        <div id="privatePopupTitle">Privát üzenet</div>
+        <button id="privatePopupClose" type="button" aria-label="Ablak bezárása">✕</button>
+      </header>
+      <div id="privatePopupStatus" role="status">Beszélgetés betöltése…</div>
+      <div id="privatePopupMessages" aria-live="polite"></div>
+      <form id="privatePopupForm">
+        <input id="privatePopupInput" maxlength="2000" placeholder="Írj privát üzenetet…" autocomplete="off" required>
+        <button id="privatePopupSend" type="submit">Küldés</button>
+      </form>
+    </section>`;
+  document.body.append(backdrop);
+  $('privatePopupClose').addEventListener('click', closePrivatePopup);
+  backdrop.addEventListener('click', event => {
+    if (event.target === backdrop) closePrivatePopup();
+  });
+  $('privatePopupForm').addEventListener('submit', sendPopupPrivateMessage);
+}
 
-document.body.append(botButton, botPanel);
-
-botButton.onclick = () => {
-  botPanel.style.display =
-    botPanel.style.display === 'none' ? 'block' : 'none';
-};
-
-botPanel.querySelector('#botClose').onclick = () => {
-  botPanel.style.display = 'none';
-};
-
-botPanel.querySelector('#botForm').onsubmit = async (event) => {
-  event.preventDefault();
-
-  const input = botPanel.querySelector('#botInput');
-  const messages = botPanel.querySelector('#botMessages');
-  const message = input.value.trim();
-  if (!message) return;
-
-  const userMessage = document.createElement('p');
-  userMessage.textContent = 'Te: ' + message;
-  messages.append(userMessage);
-  input.value = '';
-
-  const answer = document.createElement('p');
-  answer.textContent = 'Bot: Gondolkodom…';
-  messages.append(answer);
-  messages.scrollTop = messages.scrollHeight;
-
-  try {
-    const { data, error } = await db.functions.invoke(
-      'predator-chatbot',
-      { body: { message } }
-    );
-
-    answer.textContent = error
-      ? 'Bot: Most nem tudok válaszolni. Ellenőrizni kell a kapcsolatot.'
-      : 'Bot: ' + (data?.reply || 'Nem érkezett válasz.');
-  } catch {
-    answer.textContent = 'Bot: Nem sikerült kapcsolódni.';
+async function openPrivatePopup(profile) {
+  if (!currentUser) return;
+  if (!profile || !profile.id) return;
+  ensurePrivatePopup();
+  privatePopupTarget = profile;
+  privateRecipientId = String(profile.id);
+  $('privatePopupTitle').textContent =
+    '✉ Privát üzenet – ' + (profile.display_name || profile.email || 'Tag');
+  $('privatePopupBackdrop').style.display = 'flex';
+  $('privatePopupStatus').textContent = 'Beszélgetés betöltése…';
+  $('privatePopupInput').focus();
+  if (privatePopupChannel) {
+    db.removeChannel(privatePopupChannel);
+    privatePopupChannel = null;
   }
+  await loadPrivatePopupMessages();
+  privatePopupChannel = db.channel('private-popup-' + currentUser.id + '-' + profile.id)
+    .on('postgres_changes', {
+      event: 'INSERT',
+      schema: 'public',
+      table: 'messages'
+    }, payload => {
+      const m = payload.new;
+      const relevant = (String(m.sender_id) === String(currentUser.id) &&
+                        String(m.recipient_id) === String(privatePopupTarget?.id)) ||
+                       (String(m.sender_id) === String(privatePopupTarget?.id) &&
+                        String(m.recipient_id) === String(currentUser.id));
+      if (relevant) loadPrivatePopupMessages();
+    })
+    .subscribe();
+}
 
-  messages.scrollTop = messages.scrollHeight;
-};
+function closePrivatePopup() {
+  if ($('privatePopupBackdrop')) $('privatePopupBackdrop').style.display = 'none';
+  if (privatePopupChannel) {
+    db.removeChannel(privatePopupChannel);
+    privatePopupChannel = null;
+  }
+  privatePopupTarget = null;
+}
+
+async function loadPrivatePopupMessages() {
+  if (!currentUser || !privatePopupTarget || privatePopupBusy) return;
+  privatePopupBusy = true;
+  const box = $('privatePopupMessages');
+  try {
+    const otherId = String(privatePopupTarget.id);
+    const filter = 'and(sender_id.eq.' + currentUser.id + ',recipient_id.eq.' + otherId +
+      '),and(sender_id.eq.' + otherId + ',recipient_id.eq.' + currentUser.id + ')';
+    const { data, error } = await db.from('messages')
+      .select('id,sender_id,recipient_id,body,created_at')
+      .or(filter).order('created_at', { ascending: true }).limit(100);
+    if (error) {
+      $('privatePopupStatus').textContent = 'Nem tölthetők be az üzenetek: ' + error.message;
+      return;
+    }
+    box.replaceChildren();
+    for (const m of data || []) {
+      const item = document.createElement('div');
+      item.className = 'private-popup-message' +
+        (String(m.sender_id) === String(currentUser.id) ? ' mine' : '');
+      item.textContent = m.body || '';
+      const time = document.createElement('span');
+      time.className = 'private-popup-time';
+      time.textContent = m.created_at ? new Date(m.created_at).toLocaleString('hu-HU') : '';
+      item.append(time);
+      box.append(item);
+    }
+    $('privatePopupStatus').textContent = (data && data.length) ? 'Privát beszélgetés' : 'Még nincs üzenet. Írj elsőként!';
+    box.scrollTop = box.scrollHeight;
+  } catch (error) {
+    $('privatePopupStatus').textContent = 'Hiba: ' + (error.message || 'Ismeretlen hiba');
+  } finally {
+    privatePopupBusy = false;
+  }
+}
+
+async function sendPopupPrivateMessage(event) {
+  event.preventDefault();
+  if (!currentUser || !privatePopupTarget) return;
+  const input = $('privatePopupInput');
+  const body = input.value.trim();
+  if (!body) return;
+  const button = $('privatePopupSend');
+  button.disabled = true;
+  $('privatePopupStatus').textContent = 'Üzenet küldése…';
+  try {
+    const { error } = await db.from('messages').insert({
+      sender_id: currentUser.id,
+      recipient_id: String(privatePopupTarget.id),
+      body
+    });
+    if (error) {
+      $('privatePopupStatus').textContent = 'Nem sikerült elküldeni: ' + error.message;
+      return;
+    }
+    input.value = '';
+    await loadPrivatePopupMessages();
+  } catch (error) {
+    $('privatePopupStatus').textContent = 'Hiba: ' + (error.message || 'Ismeretlen hiba');
+  } finally {
+    button.disabled = false;
+    input.focus();
+  }
+}
+
 </script>
 
 </body>
