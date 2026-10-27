@@ -1,3 +1,4 @@
+````
 ```
 <!DOCTYPE html>
 <html lang="hu">
@@ -526,7 +527,7 @@ $('register').addEventListener('click', async () => {
     $('username').focus();
     return;
   }
-  if (!email || !/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email)) {
+  if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
     status('Regisztrációhoz add meg az e-mail-címedet is.');
     $('email').focus();
     return;
@@ -582,7 +583,7 @@ $('register').addEventListener('click', async () => {
 
 $('forgotPassword').addEventListener('click', async () => {
   const email = $('email').value.trim().toLowerCase();
-  if (!email || !/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email)) {
+  if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
     status('Írd be az e-mail-címedet a fenti e-mail mezőbe, majd kattints újra az Elfelejtett jelszó gombra.');
     $('email').focus();
     return;
@@ -1364,3 +1365,4 @@ async function sendPopupPrivateMessage(event) {
 </body>
 </html>
 ```
+````
