@@ -628,7 +628,7 @@ $('clearBackground').addEventListener('click',()=>{
 loadSharedBackground();
 function setMemberStatus(message){$('membersStatus').textContent=message||''}
 function setPrivateStatus(message){$('privateStatus').textContent=message||''}
-async function loadMembers(){function renderOnlineMembers(){
+function renderOnlineMembers(){
   const sideList=$('onlineMemberList');
   if(!sideList)return;
   sideList.replaceChildren();
@@ -663,7 +663,11 @@ async function loadMembers(){function renderOnlineMembers(){
   $('onlineMembersStatus').textContent=count+' online tag';
 }
 
-function startOnlinePresence(){
+}
+
+
+  if(!currentUser)return;
+  setMemberStatus('Tagok betöltése…');
   if(!currentUser)return;
 
   if(onlinePresenceChannel){
