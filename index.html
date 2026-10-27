@@ -406,7 +406,7 @@ const loginEmail = profile;
       return;
     }
 
-    if (!profile || !profile.email) {
+    if (!loginEmail) {
       status('Nem található ilyen felhasználónév. Ellenőrizd a nevet.');
       return;
     }
@@ -415,10 +415,10 @@ const loginEmail = profile;
  email: loginEmail,
   password: password
 });
-   if (!loginEmail)
-      status('Sikertelen belépés. Ellenőrizd a jelszót.');
-      return;
-    }
+  if (error) {
+  status('Sikertelen belépés. Ellenőrizd a jelszót.');
+  return;
+}
 
     status('Sikeres belépés, betöltés…');
   } catch (err) {
