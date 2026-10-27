@@ -1,4 +1,3 @@
-```
 <!DOCTYPE html>
 <html lang="hu">
 <head>
@@ -47,7 +46,7 @@ h2{font-size:21px}h3{font-size:17px}#roomTitle{font-size:19px;font-weight:bold}
 .hidden{display:none!important}.small{font-size:13px}
 .avatar{width:100px;height:100px;object-fit:cover;border-radius:50%;display:block;margin-bottom:12px;background:#29292f;border:2px solid var(--red)}
 #avatarFile{margin:10px 0}
-.member-list{display:grid;gap:8px}.member-item{display:flex;align-items:center;gap:10px;padding:5px 2px;border:0;border-radius:0;background:transparent}member-item img{width:42px;height:42px;border-radius:50%;object-fit:cover;background:#29292f}.member-item .member-name{flex:1;min-width:0;overflow-wrap:anywhere}.member-item button{padding:8px 10px}.private-layout{display:grid;grid-template-columns:minmax(160px,.7fr) minmax(0,1.3fr);gap:12px}.private-messages{height:40vh;min-height:220px;overflow:auto;border:1px solid var(--line);border-radius:12px;padding:8px}.private-compose{display:flex;gap:8px;margin-top:8px}.private-compose input{flex:1}@media(max-width:650px){.private-layout{grid-template-columns:1fr}.private-compose{position:sticky;bottom:4px;background:var(--panel);padding:4px}}
+.member-list{display:grid;gap:8px}.member-item{display:flex;align-items:center;gap:10px;padding:5px 2px;border:0;border-radius:0;background:transparent}.member-item img{width:42px;height:42px;border-radius:50%;object-fit:cover;background:#29292f}.member-item .member-name{flex:1;min-width:0;overflow-wrap:anywhere}.member-item button{padding:8px 10px}.private-layout{display:grid;grid-template-columns:minmax(160px,.7fr) minmax(0,1.3fr);gap:12px}.private-messages{height:40vh;min-height:220px;overflow:auto;border:1px solid var(--line);border-radius:12px;padding:8px}.private-compose{display:flex;gap:8px;margin-top:8px}.private-compose input{flex:1}@media(max-width:650px){.private-layout{grid-template-columns:1fr}.private-compose{position:sticky;bottom:4px;background:var(--panel);padding:4px}}
 @media(max-width:650px){header{padding:11px 10px;gap:7px}h1{font-size:18px}#userbar{max-width:28vw;font-size:11px}header>button{padding:9px;font-size:13px}main{padding:0 8px;margin:9px auto}.panel{padding:11px;border-radius:13px}.layout{grid-template-columns:1fr;gap:8px}#chat .layout>aside{margin-bottom:0}#chat .layout>aside h3{margin:0 0 6px}#chat .layout>aside p{margin:5px 0}#messages{height:calc(100dvh - 330px);min-height:240px;max-height:58vh}.msg{padding:10px 5px}.msg div{font-size:16px}.composer{position:sticky;bottom:4px;z-index:5}.composer input{font-size:16px;padding:11px 12px}.composer button{padding:11px 12px}.tabs button{font-size:13px;padding:10px}.auth{margin:15px auto}}
 @media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important;transition:none!important}}
 .msg .msg-head b { color: #ff5b70; }
@@ -255,6 +254,66 @@ button {
 @media(max-width:600px){#privatePopupBackdrop{padding:0}#privatePopup{width:100%;height:100dvh;max-height:100dvh;border-radius:0}#privatePopupForm{padding-bottom:max(10px,env(safe-area-inset-bottom))}}
 </style>
 
+
+<style id="predator-neon-redesign">
+:root{color-scheme:dark;--bg:#050507;--panel:#08080b;--panel2:#111116;--red:#ff172d;--red2:#b90820;--text:#f8f8fb;--muted:#a7a7b1;--line:#5c101c}
+html{background:#050507}
+body{min-height:100vh;background:radial-gradient(ellipse at 50% 0%,#2a0710 0,#09090c 44%,#030304 100%);font-family:Arial,Helvetica,sans-serif;color:var(--text)}
+header{min-height:94px;padding:12px 22px;background:linear-gradient(100deg,#09090b 0%,#170308 48%,#060607 100%);border-bottom:2px solid var(--red);box-shadow:0 4px 28px #ff10272a;gap:18px}
+h1{font-size:clamp(22px,2.5vw,34px);font-weight:900;letter-spacing:1px;text-transform:uppercase;text-shadow:0 0 16px #ff1b36a0}
+h1 span{color:#ff243c;text-shadow:0 0 18px #ff243c99}
+#userbar{margin-left:auto;font-size:13px;color:#ddd;max-width:30vw}
+button{background:linear-gradient(135deg,#ff233c,#b90820);border:1px solid #ff3449;color:#fff;border-radius:10px;box-shadow:0 3px 12px #ff10271a}
+button:hover{background:linear-gradient(135deg,#ff4054,#d20a27);box-shadow:0 0 16px #ff1c373d}
+input,select{background:#08080b;border-color:#4a252d;border-radius:10px}
+main{max-width:none;width:100%;margin:0 auto;padding:12px 14px}
+#app{width:100%}
+.tabs{display:flex;align-items:center;gap:7px;overflow-x:auto;flex-wrap:nowrap;background:#08080b;border:1px solid #40101b;border-radius:14px;padding:8px;margin:0 0 12px;scrollbar-width:thin}
+.tabs button{flex:0 0 auto;min-height:48px;padding:10px 15px;border:1px solid #35121a;background:linear-gradient(180deg,#0e0e12,#08080a);color:#eee;border-radius:11px;font-size:15px}
+.tabs button.active,.tabs button[data-tab="chat"].active{background:linear-gradient(135deg,#ff233c,#a90920);border-color:#ff263d;box-shadow:0 0 20px #ff173b38}
+.predator-layout{display:grid;grid-template-columns:minmax(210px,22%) minmax(0,1fr) minmax(220px,24%);gap:12px;align-items:stretch}
+.predator-layout>aside,.predator-layout>section{min-width:0;margin:0;background:linear-gradient(160deg,#09090c,#050507 75%);border:1px solid #e21a32;border-radius:14px;padding:14px;box-shadow:inset 0 0 22px #ff173b09,0 0 18px #ff173b0c}
+.predator-layout>section{background:radial-gradient(ellipse at 75% 0%,#26070e 0%,#08080b 50%,#050507 100%);padding:14px}
+h2,h3{margin-top:6px;color:#fff}
+#chat .predator-members{max-height:calc(100vh - 190px);overflow:auto}
+#rooms{display:grid;gap:7px}
+#rooms button{width:100%;text-align:left;display:block;background:linear-gradient(90deg,#1a090e,#0b0b0e);border:1px solid #3c151e;border-radius:10px;padding:11px 12px}
+#rooms button.active{background:linear-gradient(100deg,#a60a20,#39070f);border-color:#ff263d;box-shadow:inset 0 0 18px #ff20301f}
+.neon-divider{border:0;border-top:1px solid #7d1525;margin:15px 0}
+.direct-shortcut{width:100%;display:block;text-align:left;padding:8px 10px;margin:4px 0;background:transparent;border:1px solid transparent;box-shadow:none;color:#eee;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.direct-shortcut:hover{background:#24080f;border-color:#681322}
+#roomTitle{font-size:24px;color:#fff;margin:8px 0 4px}
+#chat .layout>aside h3,#chat h3{font-size:19px}
+#messages{height:calc(100vh - 430px);min-height:300px;max-height:650px;padding:5px 2px;gap:2px}
+.msg{border-bottom:1px solid #32121a;border-radius:8px;padding:11px 8px;background:#08080b44}
+.msg:hover{background:#ff183008}
+.msg-avatar{width:46px;height:46px;flex-basis:46px;border:2px solid #e31b35;box-shadow:0 0 10px #ff18351b}
+.msg .time{margin-left:auto;font-size:12px}
+.msg-content .message-body{font-size:17px}
+.composer{position:sticky;bottom:5px;z-index:4;margin-top:10px;background:#070709;border:1px solid #791629;border-radius:14px;padding:8px}
+.composer input{border-radius:10px;border-color:#5c2831}
+.composer button{border-radius:10px;padding:12px 15px}
+.member-list{display:grid;gap:6px}
+.member-item{display:flex;align-items:center;gap:10px;padding:7px 4px;border:0;border-radius:9px;background:transparent}
+.member-item img{width:42px;height:42px;flex:0 0 42px;border-radius:50%;object-fit:cover;border:1px solid #8b2435}
+#onlineMemberList .member-item{padding:7px 2px}
+#onlineMemberList .member-item img{width:42px;height:42px}
+.member-name{font-weight:700}
+#status,#chatStatus,#avatarStatus,#roomAdminStatus,#roleStatus{color:#ff9aa8}
+.panel{background:linear-gradient(145deg,#111116,#08080b);border:1px solid #4d1722;border-radius:14px;box-shadow:0 8px 25px #0008}
+#music,#members,#private,#profile,#admin{margin-top:12px}
+#privatePopup{background:#0b0b10!important;border:1px solid #ff1b36!important;box-shadow:0 0 55px #ff173b35!important}
+#privatePopupHeader{background:#08080b!important}
+#privatePopupMessages{background:radial-gradient(ellipse at top,#26070e,#09090c 70%)}
+.private-popup-message{background:#191920;border-color:#57202c}
+.private-popup-message.mine{background:#4a0b18;border-color:#c51b32}
+#privatePopupForm{background:#08080b}
+.auth{background:linear-gradient(145deg,#15080d,#08080b);border-color:#9e192d}
+@media(min-width:1200px){main{padding-left:18px;padding-right:18px}.predator-layout{grid-template-columns:minmax(230px,21%) minmax(0,1fr) minmax(245px,23%)}}
+@media(max-width:900px){.predator-layout{grid-template-columns:minmax(0,1fr) minmax(0,1.8fr)}.predator-layout>.predator-members{grid-column:1/-1;max-height:none}.predator-layout>section{grid-column:2;grid-row:1 / span 2}.predator-layout>aside:first-child{grid-column:1;grid-row:1}.predator-layout>.predator-members{grid-column:1;grid-row:2}#messages{height:50vh}}
+@media(max-width:620px){header{min-height:65px;padding:10px;gap:8px}h1{font-size:19px;letter-spacing:0}#userbar{max-width:25vw;font-size:10px}header>button{padding:8px;font-size:12px}main{padding:8px}.tabs{gap:5px;padding:5px}.tabs button{font-size:12px;padding:9px 11px;min-height:40px}.predator-layout{display:flex;flex-direction:column;gap:8px}.predator-layout>aside,.predator-layout>section{padding:11px}.predator-layout>section{order:1}.predator-layout>aside:first-child{order:0}.predator-layout>.predator-members{order:2;max-height:300px}.predator-layout>section{grid-column:auto;grid-row:auto}#messages{height:48vh;min-height:240px;max-height:500px}.msg-avatar{width:38px;height:38px;flex-basis:38px}.msg-content .message-body{font-size:15px}.composer{position:sticky;bottom:3px}.composer input{font-size:16px}.private-layout{grid-template-columns:1fr}}
+</style>
+
 </head>
 <body>
 <header>
@@ -290,7 +349,7 @@ button {
 </section>
 <section id="app" class="hidden">
   <nav class="tabs">
-  <button data-tab="music">🎵 Zene</button> <button data-tab="members">👥 Tagok</button><button data-tab="private">✉ Üzenetek</button><button data-tab="profile">👤 Profil</button><button data-tab="admin" id="adminTab" class="hidden">⚙ Admin</button>
+  <button data-tab="chat" class="active">🏠 Főoldal / Chat</button><button data-tab="music">🎵 Zene</button><button data-tab="chat">▣ Szobák</button><button data-tab="members">👥 Felhasználók</button><button data-tab="private">✉ Privát üzenetek</button><button data-tab="profile">👤 Profil</button><button data-tab="admin" id="adminTab" class="hidden">♛ Adminpanel</button>
   </nav><section id="music" class="panel hidden">
   <h2>🎵 Predator Zene</h2>
   <p>Tölts fel zenét, vagy hallgasd meg a tagok által feltöltött zenéket!</p>
@@ -346,7 +405,7 @@ button {
     <h2>Profilom</h2><img id="avatarPreview" class="avatar" src="https://placehold.co/120x120?text=Profil" alt="Profilkép">
     <label for="displayName">Megjelenő név</label><input id="displayName" maxlength="32" placeholder="A chatben látható neved"><button type="button" id="saveDisplayName">Név mentése</button><p id="displayNameStatus" class="muted small"></p>
     <label for="avatarFile">Profilkép kiválasztása</label><input id="avatarFile" type="file" accept="image/png,image/jpeg,image/webp,image/gif">
-    <button type="button" id="uploadAvatar">Profilkép feltöltése</button><p id="avatarStatus"></p><p id="profileEmail"></p><hr><h3>Háttérkép</h3><p class="muted small">A háttérkép ezen a böngészőn lesz elmentve.</p><input id="backgroundFile"
+    <button type="button" id="uploadAvatar">Profilkép feltöltése</button><p id="avatarStatus"></p><p id="profileEmail"></p><hr><h3>Háttérkép</h3><p class="muted small">A háttérkép ezen a böngészőn lesz elmentve.</p><input id="backgroundFile" type="file" accept="image/png,image/jpeg,image/webp">
        <section class="panel" id="sharedBackground">
   <h2>🎨 Közös chat-háttér</h2>
   <p>Minden tagnál megjelenő háttér beállítása.</p>
@@ -461,7 +520,7 @@ if (forgotPasswordButton) {
 }
 $('newPasswordForm').addEventListener('submit',async e=>{e.preventDefault();const p1=$('newPassword').value,p2=$('newPasswordAgain').value;if(p1.length<6){status('A jelszónak legalább 6 karakteresnek kell lennie.');return}if(p1!==p2){status('A két jelszó nem egyezik.');return}status('Jelszó mentése…');const {error}=await db.auth.updateUser({password:p1});if(error){status('Nem sikerült megváltoztatni a jelszót: '+error.message);return}status('Sikerült megváltoztatni a jelszót.');$('newPasswordForm').reset();showRecovery(false);await db.auth.signOut();history.replaceState(null,'',location.pathname)});
 $('logout').addEventListener('click',async()=>{await db.auth.signOut()});
-document.querySelectorAll('[data-tab]').forEach(button=>{button.addEventListener('click',()=>{document.querySelectorAll('[data-tab]').forEach(b=>b.classList.toggle('active',b===button));['chat','members','private','profile','admin'].forEach(id=>$(id).classList.add('hidden'));$(button.dataset.tab).classList.remove('hidden');if(button.dataset.tab==='members')loadMembers();if(button.dataset.tab==='private')loadPrivateMessages()})});
+document.querySelectorAll('[data-tab]').forEach(button=>{button.addEventListener('click',()=>{document.querySelectorAll('[data-tab]').forEach(b=>b.classList.toggle('active',b===button));['chat','music','members','private','profile','admin'].forEach(id=>$(id).classList.add('hidden'));$(button.dataset.tab).classList.remove('hidden');if(button.dataset.tab==='members')loadMembers();if(button.dataset.tab==='private')loadPrivateMessages()})});
 const OWNER_USER_ID='aef906e3-f704-4a28-b3c2-6a1373c5c4f5';
 async function checkAdmin(){
   const {data,error}=await db.from('chat_roles').select('role').eq('user_id',currentUser.id).maybeSingle();
@@ -713,6 +772,8 @@ async function loadMembers(){
   }
   const list=$('memberList');
   list.replaceChildren();
+  const directList = $('directMessageList');
+  if (directList) directList.replaceChildren();
   const recipients=$('privateRecipient');
   const previous=recipients.value;
   recipients.replaceChildren();
@@ -732,6 +793,14 @@ async function loadMembers(){
   }
   if(previous)recipients.value=previous;
   for(const p of others){
+    if (directList && String(p.id) !== String(currentUser.id)) {
+      const shortcut = document.createElement('button');
+      shortcut.type = 'button';
+      shortcut.className = 'direct-shortcut';
+      shortcut.textContent = '● ' + (p.display_name || p.email || 'Tag');
+      shortcut.addEventListener('click', () => openPrivatePopup(p));
+      directList.append(shortcut);
+    }
     const row=document.createElement('div');
     row.className='member-item';
     const img=document.createElement('img');
