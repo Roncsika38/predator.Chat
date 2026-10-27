@@ -396,12 +396,10 @@ $('authform').addEventListener('submit', async e => {
   status('Belépés folyamatban…');
 
   try {
-    const { data: profile, error: lookupError } = await db
-      .from('profiles')
-      .select('email')
-.ilike('username', username.trim())
-      .limit(1)
-      .maybeSingle();
+  const { data: profile, error: lookupError } = await db
+  .rpc('get_login_email', { p_username: username.trim() });
+
+const loginEmail = profile;
 
     if (lookupError) {
       status('Hiba a felhasználó keresésekor: ' + lookupError.message);
@@ -414,10 +412,10 @@ $('authform').addEventListener('submit', async e => {
     }
 
    const { error } = await db.auth.signInWithPassword({
-  email: profile.email,
+ email: loginEmail,
   password: password
 });
-    if (error) {
+   if (!loginEmail)
       status('Sikertelen belépés. Ellenőrizd a jelszót.');
       return;
     }
