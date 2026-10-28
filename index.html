@@ -444,10 +444,10 @@ h2,h3{margin-top:6px;color:#fff}
     </div>
     <div id="roleAdminTools" class="panel hidden">
       <h3>🔐 Szerepkör kezelése</h3>
-      <p class="muted">Csak a tulajdonosi fiók módosíthat szerepkört. A felhasználó UUID-ját a Supabase Authentication oldalán találod.</p>
+      <p class="muted">Írd be a tag chatben használt felhasználónevét. UUID-t nem kell megadnod.</p>
       <form id="roleForm" class="form">
-        <input id="targetUserId" placeholder="Felhasználó UUID" autocomplete="off" required>
-        <select id="targetRole" aria-label="Szerepkör"><option value="member">Tag</option><option value="admin">Admin</option></select>
+        <input id="targetUsername" placeholder="Felhasználónév" autocomplete="off" minlength="2" maxlength="32" required>
+        <select id="targetRole" aria-label="Szerepkör"><option value="member">Tag</option><option value="moderator">Moderátor</option><option value="admin">Admin</option></select>
         <button type="submit">Szerepkör mentése</button>
       </form>
       <p id="roleStatus" class="muted" role="status"></p>
@@ -637,12 +637,17 @@ $('createRoomForm').addEventListener('submit',async e=>{
 });
 $('roleForm').addEventListener('submit',async e=>{
   e.preventDefault();if(!currentUser||String(currentUser.id)!==OWNER_USER_ID){$('roleStatus').textContent='Ehhez csak a tulajdonosi fiók jogosult.';return}
-  const userId=$('targetUserId').value.trim(),role=$('targetRole').value;
-  if(!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(userId)){$('roleStatus').textContent='Érvényes felhasználói UUID-t adj meg.';return}
-  const button=$('roleForm').querySelector('button');button.disabled=true;$('roleStatus').textContent='Szerepkör mentése…';
-  const {error}=await db.rpc('grant_predator_role',{p_user_id:userId,p_role:role});button.disabled=false;
-  if(error){$('roleStatus').textContent='Nem sikerült menteni: '+error.message;return}
-  $('roleStatus').textContent='Szerepkör elmentve.';
+  const username=$('targetUsername').value.trim(),role=$('targetRole').value;
+  if(username.length<2){$('roleStatus').textContent='Adj meg egy érvényes felhasználónevet.';return}
+  const button=$('roleForm').querySelector('button');button.disabled=true;$('roleStatus').textContent='Felhasználó keresése és szerepkör mentése…';
+  try {
+    const {error}=await db.rpc('predator_set_role_by_username',{p_username:username,p_role:role});
+    if(error) throw error;
+    $('roleStatus').textContent='Szerepkör elmentve: '+username+' → '+({member:'Tag',moderator:'Moderátor',admin:'Admin'}[role]||role)+'.';
+    $('roleForm').reset();
+  } catch(err) {
+    $('roleStatus').textContent='Nem sikerült menteni: '+(err?.message||'Ismeretlen hiba')+'. A felhasználónév-alapú jogosultság SQL-függvényének elérhetőnek kell lennie a Supabase-ben.';
+  } finally {button.disabled=false}
 });
 async function loadRooms(){
   const {data,error}=await db.from('rooms').select('*');
