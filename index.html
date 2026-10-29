@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="hu">
 <head>
@@ -322,6 +321,21 @@ h2,h3{margin-top:6px;color:#fff}
 #moderationStatus{white-space:pre-wrap;color:#ff9aa8;font-size:13px}
 </style>
 
+
+
+<style id="predator-online-radio-style">
+#predatorRadio{margin:0 0 14px;padding:0;min-width:0}
+#predatorRadio h3{margin:3px 0 8px;color:#ff4055}
+#predatorRadio label{display:block;margin:8px 0 5px}
+#predatorRadio select{width:100%;margin-bottom:9px;font-size:14px}
+.radio-frame-wrap{width:100%;height:300px;overflow:hidden;border:1px solid #792033;border-radius:10px;background:#09090c}
+#predatorRadioFrame{display:block;width:100%;height:100%;border:0;background:#09090c}
+#predatorRadioOpen{display:inline-block;color:#ff6475;font-size:13px;overflow-wrap:anywhere;margin:4px 0 10px}
+#predatorRadioToggle{display:block;width:100%;padding:9px;font-size:13px;background:linear-gradient(135deg,#25252d,#111116);border-color:#5a2630;box-shadow:none}
+#predatorRadio.is-collapsed .radio-frame-wrap,#predatorRadio.is-collapsed #predatorRadioOpen,#predatorRadio.is-collapsed>p,#predatorRadio.is-collapsed label,#predatorRadio.is-collapsed select{display:none}
+@media(max-width:620px){.radio-frame-wrap{height:300px}#predatorRadio{margin-bottom:12px}}
+</style>
+
 </head>
 <body>
 <header>
@@ -405,6 +419,27 @@ h2,h3{margin-top:6px;color:#fff}
   </section>
 
   <aside class="panel predator-members">
+    <section id="predatorRadio" aria-label="Online rádió">
+      <h3>📻 Online rádió</h3>
+      <p class="muted small">Válassz rádiót, és hallgasd a chat mellett.</p>
+      <label for="predatorRadioSelect" class="small">Rádió kiválasztása</label>
+      <select id="predatorRadioSelect">
+        <option value="https://myonlineradio.hu/retro-radio">Retro Rádió</option>
+        <option value="https://myonlineradio.hu/radio-1">Rádió 1</option>
+        <option value="https://myonlineradio.hu/petofi-radio">Petőfi Rádió</option>
+        <option value="https://myonlineradio.hu/kossuth-radio">Kossuth Rádió</option>
+        <option value="https://myonlineradio.hu/slager-fm">Sláger FM</option>
+        <option value="https://myonlineradio.hu/jazzy-radio">Jazzy Rádió</option>
+        <option value="https://myonlineradio.hu/rocker-radio">Rocker Rádió</option>
+      </select>
+      <div class="radio-frame-wrap">
+        <iframe id="predatorRadioFrame" title="MyOnlineRadio lejátszó" src="https://myonlineradio.hu/retro-radio" loading="lazy" allow="autoplay; encrypted-media" referrerpolicy="strict-origin-when-cross-origin"></iframe>
+      </div>
+      <p class="muted small">Ha a rádió nem jelenik meg beágyazva, nyisd meg külön.</p>
+      <a id="predatorRadioOpen" href="https://myonlineradio.hu/retro-radio" target="_blank" rel="noopener noreferrer">Megnyitás a MyOnlineRadio.hu-n ↗</a>
+      <button id="predatorRadioToggle" type="button" aria-expanded="true">Rádiópanel elrejtése</button>
+    </section>
+    <hr class="neon-divider">
     <h3>🟢 Tagok</h3>
     <p id="onlineMembersStatus" class="muted small">Tagok betöltése...</p>
     <div id="onlineMemberList" class="member-list"></div>
@@ -1444,6 +1479,27 @@ async function moderateMember(action){
   $('moderationStatus').textContent=data?.message||('Sikeres művelet: '+labels[action]+'.');
 }
 
+
+
+// Predator Chat – MyOnlineRadio oldalsó panel
+(function setupPredatorRadio(){
+  const select = document.getElementById('predatorRadioSelect');
+  const frame = document.getElementById('predatorRadioFrame');
+  const openLink = document.getElementById('predatorRadioOpen');
+  const toggle = document.getElementById('predatorRadioToggle');
+  const panel = document.getElementById('predatorRadio');
+  if (!select || !frame || !openLink || !toggle || !panel) return;
+  select.addEventListener('change', () => {
+    const url = select.value;
+    frame.src = url;
+    openLink.href = url;
+  });
+  toggle.addEventListener('click', () => {
+    const collapsed = panel.classList.toggle('is-collapsed');
+    toggle.textContent = collapsed ? 'Rádiópanel megnyitása' : 'Rádiópanel elrejtése';
+    toggle.setAttribute('aria-expanded', String(!collapsed));
+  });
+})();
 </script>
 
 </body>
