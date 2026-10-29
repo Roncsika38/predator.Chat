@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="hu">
 <head>
@@ -310,7 +311,7 @@ h2,h3{margin-top:6px;color:#fff}
 #privatePopupForm{background:#08080b}
 .auth{background:linear-gradient(145deg,#15080d,#08080b);border-color:#9e192d}
 @media(min-width:1200px){main{padding-left:18px;padding-right:18px}.predator-layout{grid-template-columns:minmax(230px,21%) minmax(0,1fr) minmax(245px,23%)}}
-@media(max-width:900px){.predator-layout{grid-template-columns:minmax(0,1fr) minmax(0,1.8fr)}.predator-layout>.predator-members{grid-column:1/-1;max-height:none}.predator-layout>section{grid-column:2;grid-row:1 / span 2}.predator-layout>aside:first-child{grid-column:1;grid-row:1}.predator-layout>.predator-members{grid-column:1;grid-row:2}#messages{height:50vh}}
+@media(max-width:1000px) and (min-width:621px){.predator-layout{grid-template-columns:minmax(170px,22%) minmax(0,1fr) minmax(190px,24%);gap:8px}.predator-layout>aside,.predator-layout>section{padding:10px}#messages{height:50vh;min-height:260px}.msg-content .message-body{font-size:15px}}
 @media(max-width:620px){header{min-height:65px;padding:10px;gap:8px}h1{font-size:19px;letter-spacing:0}#userbar{max-width:25vw;font-size:10px}header>button{padding:8px;font-size:12px}main{padding:8px}.tabs{gap:5px;padding:5px}.tabs button{font-size:12px;padding:9px 11px;min-height:40px}.predator-layout{display:flex;flex-direction:column;gap:8px}.predator-layout>aside,.predator-layout>section{padding:11px}.predator-layout>section{order:1}.predator-layout>aside:first-child{order:0}.predator-layout>.predator-members{order:2;max-height:300px}.predator-layout>section{grid-column:auto;grid-row:auto}#messages{height:48vh;min-height:240px;max-height:500px}.msg-avatar{width:38px;height:38px;flex-basis:38px}.msg-content .message-body{font-size:15px}.composer{position:sticky;bottom:3px}.composer input{font-size:16px}.private-layout{grid-template-columns:1fr}}
 
 .member-name,.clickable-name,.msg-head b{cursor:pointer}
@@ -483,6 +484,7 @@ function appendPoliceBadge(name,role){
   if(!['owner','moderator'].includes(String(role||'').toLowerCase()))return;
   const badge=document.createElement('span');
   badge.textContent=' 👮';
+  badge.className='police-role-badge';
   badge.title=role==='owner'?'Tulajdonos':'Moderátor';
   badge.setAttribute('aria-label',badge.title);
   badge.style.cursor='help';
@@ -822,7 +824,7 @@ loadSharedBackground();
 function setMemberStatus(message){$('membersStatus').textContent=message||''}
 function setPrivateStatus(message){$('privateStatus').textContent=message||''}
 
-function renderOnlineMembers(){
+async function renderOnlineMembers(){
   const sideList=$('onlineMemberList');
   if(!sideList)return;
   sideList.replaceChildren();
@@ -840,6 +842,8 @@ function renderOnlineMembers(){
     const name=document.createElement('div');
     name.className='member-name';
     name.textContent=p.display_name||'Tag';
+    const role=String(id)===OWNER_USER_ID?'owner':await getPredatorRole(id);
+    appendPoliceBadge(name,role);
     name.classList.add('clickable-name'); name.title='Kattints a tagra'; name.addEventListener('click',()=>openMemberActions(p));
     row.style.cursor='pointer'; row.addEventListener('click',()=>openMemberActions(p));
     row.append(img,name);
