@@ -1,4 +1,3 @@
-````
 ```
 <!DOCTYPE html>
 <html lang="hu">
@@ -212,9 +211,6 @@ button {
 @media(max-width:850px){.predator-layout{grid-template-columns:1fr}.predator-layout>main{padding:12px}}
   #chatImageFile{display:none}.chat-image{display:block;max-width:100%;max-height:420px;object-fit:contain;border-radius:12px;margin-top:8px}
 
-
-.bot-tabs{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0}.bot-tabs button{background:#111;color:#eee;border:1px solid #74202d;border-radius:10px;padding:10px 13px}.bot-tabs button.active{background:linear-gradient(135deg,#ff233c,#a90920)}.bot-transcript{height:300px;overflow:auto;background:#09090c;border:1px solid #43121b;border-radius:12px;padding:12px;margin:12px 0;display:flex;flex-direction:column;gap:9px}.bot-line{padding:10px 12px;border-radius:10px;max-width:95%;overflow-wrap:anywhere;white-space:pre-wrap}.bot-reply{background:#201116;border:1px solid #54202b;align-self:flex-start}.bot-user{background:#37111a;border:1px solid #9d1d32;align-self:flex-end}.bot-compose{display:flex;gap:8px}.bot-compose input{flex:1;min-width:0}.secondary{background:#24242b;border:1px solid #5b2630}@media(max-width:620px){.bot-transcript{height:48vh;min-height:220px}.bot-compose button{padding:10px}}
-
 </style>
 <style>
 #onlineMemberList .member-item {
@@ -397,23 +393,8 @@ h2,h3{margin-top:6px;color:#fff}
 </section>
 <section id="app" class="hidden">
   <nav class="tabs">
-  <button data-tab="chat" class="active">🏠 Főoldal / Chat</button><button data-tab="music">🎵 Zene</button><button data-tab="radio">📻 Rádió</button><button data-tab="games">🎮 Játékok</button><button data-tab="bot">🤖 ChatBot</button><button data-tab="chat">▣ Szobák</button><button data-tab="members">👥 Felhasználók</button><button data-tab="private">✉ Privát üzenetek</button><button data-tab="profile">👤 Profil</button><button data-tab="admin" id="adminTab" class="hidden">♛ Adminpanel</button>
+  <button data-tab="chat" class="active">🏠 Főoldal / Chat</button><button data-tab="music">🎵 Zene</button><button data-tab="radio">📻 Rádió</button><button data-tab="games">🎮 Játékok</button><button data-tab="chat">▣ Szobák</button><button data-tab="members">👥 Felhasználók</button><button data-tab="private">✉ Privát üzenetek</button><button data-tab="profile">👤 Profil</button><button data-tab="admin" id="adminTab" class="hidden">♛ Adminpanel</button>
   </nav>
-<section id="bot" class="panel hidden">
-  <h2>🤖 Predator ChatBot</h2>
-  <p class="muted">A ChatBot menüpontban és a bal oldali Predator Botszoba gombbal is elérhető. Választhatsz egyszerű beszélgetős botot vagy valódi AI-t. A valódi chat a tagok között változatlanul működik.</p>
-  <div class="bot-tabs">
-    <button type="button" class="active" data-bot-mode="simple">💬 Beszélgetős bot</button>
-    <button type="button" data-bot-mode="ai">🧠 Okos AI</button>
-    <button type="button" data-bot-mode="room">🚪 Botszoba</button>
-  </div>
-  <p id="botModeDescription" class="muted small">Beszélgetős bot: kérdezz a Predator Chatről, játékokról vagy általános dolgokról.</p>
-  <div id="botTranscript" class="bot-transcript" aria-live="polite" aria-label="ChatBot beszélgetés"><div class="bot-line bot-reply"><b>Predator Bot:</b> Szia! Írj nekem valamit, és beszélgessünk. 😊</div></div>
-  <form id="botForm" class="bot-compose"><input id="botInput" maxlength="1000" placeholder="Írj a chatbotnak…" autocomplete="off" required><button type="submit">Küldés</button></form>
-  <p id="botStatus" class="muted small" role="status"></p>
-  <button type="button" id="botClear" class="secondary">🧹 Beszélgetés törlése</button>
-  <p class="muted small">Az AI-mód a meglévő Render-szerver /api/chat végpontját használja. Ehhez a mellékelt szerveroldali útvonalat be kell illeszteni a Renderen futó szerverbe, és az OPENAI_API_KEY kulcsot a Render Environment beállításaiban kell megadni. A bot nem küld üzenetet a valódi chatbe.</p>
-</section>
 <section id="games" class="panel hidden">
   <h2>🎮 Predator Játékok</h2>
   <p class="muted">Játssz egy gyors kockadobást, vagy hívd ki a melletted ülőt egy X–O párbajra. Ezek a játékok jelenleg ezen az eszközön futnak.</p>
@@ -743,7 +724,7 @@ $('forgotPassword').addEventListener('click', async () => {
 });
 $('newPasswordForm').addEventListener('submit',async e=>{e.preventDefault();const p1=$('newPassword').value,p2=$('newPasswordAgain').value;if(p1.length<6){status('A jelszónak legalább 6 karakteresnek kell lennie.');return}if(p1!==p2){status('A két jelszó nem egyezik.');return}status('Jelszó mentése…');const {error}=await db.auth.updateUser({password:p1});if(error){status('Nem sikerült megváltoztatni a jelszót: '+error.message);return}status('Sikerült megváltoztatni a jelszót.');$('newPasswordForm').reset();showRecovery(false);await db.auth.signOut();history.replaceState(null,'',location.pathname)});
 $('logout').addEventListener('click',async()=>{await db.auth.signOut()});
-document.querySelectorAll('[data-tab]').forEach(button=>{button.addEventListener('click',()=>{document.querySelectorAll('[data-tab]').forEach(b=>b.classList.toggle('active',b===button));['chat','music','radio','games','bot','members','private','profile','admin'].forEach(id=>$(id).classList.add('hidden'));$(button.dataset.tab).classList.remove('hidden');if(button.dataset.tab==='members')loadMembers();if(button.dataset.tab==='private')loadPrivateMessages()})});
+document.querySelectorAll('[data-tab]').forEach(button=>{button.addEventListener('click',()=>{document.querySelectorAll('[data-tab]').forEach(b=>b.classList.toggle('active',b===button));['chat','music','radio','games','members','private','profile','admin'].forEach(id=>$(id).classList.add('hidden'));$(button.dataset.tab).classList.remove('hidden');if(button.dataset.tab==='members')loadMembers();if(button.dataset.tab==='private')loadPrivateMessages()})});
 const OWNER_USER_ID='aef906e3-f704-4a28-b3c2-6a1373c5c4f5';
 async function checkAdmin(){
   const {data,error}=await db.from('chat_roles').select('role').eq('user_id',currentUser.id).maybeSingle();
@@ -790,10 +771,6 @@ async function loadRooms(){
   if(error){chatStatus('Nem tölthetők be a szobák: '+error.message);return}
   roomList=data||[];$('rooms').replaceChildren();
   roomList.forEach(room=>{const name=room.name||room.title||room.slug||'Szoba';const b=document.createElement('button');b.textContent='💬 '+name;b.addEventListener('click',()=>selectRoom(room));$('rooms').append(b)});
-  const botRoom=document.createElement('button');
-  botRoom.type='button';botRoom.textContent='🤖 Predator Botszoba';botRoom.id='predatorBotRoomShortcut';
-  botRoom.addEventListener('click',()=>{document.querySelector('[data-tab="bot"]')?.click();document.querySelector('[data-bot-mode="room"]')?.click();});
-  $('rooms').append(botRoom);
   if(!currentRoom&&roomList.length)selectRoom(roomList[0]);if(!roomList.length)chatStatus('Még nincs szoba a rooms táblában.');
 }
 function selectRoom(room){currentRoom=room;const name=room.name||room.title||room.slug||'Szoba';$('roomTitle').textContent=name;document.querySelectorAll('#rooms button').forEach(b=>b.classList.toggle('active',b.textContent==='💬 '+name));if(messageChannel){db.removeChannel(messageChannel);messageChannel=null}loadMessages();messageChannel=db.channel('room-'+room.id).on('postgres_changes',{event:'INSERT',schema:'public',table:'messages',filter:'room_id=eq.'+room.id},payload=>renderMessage(payload.new)).subscribe()}
@@ -1612,87 +1589,6 @@ async function moderateMember(action){
 })();
 </script>
 
-
-<script id="predator-chatbot-script">
-(function(){
- const $b=id=>document.getElementById(id);
- const form=$b('botForm'),input=$b('botInput'),transcript=$b('botTranscript'),status=$b('botStatus'),desc=$b('botModeDescription');
- if(!form||!input||!transcript)return;
- // A titkos API-kulcs kizárólag a Render szerveren marad.
- const AI_ENDPOINT='https://hodog-chat.onrender.com/api/chat';
- let replyMode='simple',viewMode='bot',busy=false;
- const history=[];
- const descriptions={
-  simple:'Beszélgetős bot: előre megadott válaszokkal azonnal működik.',
-  ai:'Okos AI: a Render szerveren keresztül valódi AI-válaszokat kér.',
-  room:'Botszoba nézet: ugyanaz a beszélgetés itt külön botszobaként jelenik meg.'
- };
- document.querySelectorAll('[data-bot-mode]').forEach(btn=>btn.addEventListener('click',()=>{
-   const selected=btn.dataset.botMode;
-   if(selected==='simple'||selected==='ai')replyMode=selected;
-   viewMode=selected==='room'?'room':'bot';
-   document.querySelectorAll('[data-bot-mode]').forEach(x=>x.classList.toggle('active',x===btn));
-   desc.textContent=viewMode==='room'
-    ?'Predator Botszoba · '+(replyMode==='ai'?'Okos AI válaszol.':'Beszélgetős bot válaszol.')+' A valódi tagok chatje külön működik.'
-    :descriptions[replyMode];
-   status.textContent='';
-   input.placeholder=viewMode==='room'?'Írj a Predator Botszobába…':'Írj a chatbotnak…';
-   input.focus();
- }));
- function addLine(who,text,cls){
-   const div=document.createElement('div');div.className='bot-line '+cls;
-   const b=document.createElement('b');b.textContent=who+': ';
-   div.append(b,document.createTextNode(String(text||'')));transcript.append(div);transcript.scrollTop=transcript.scrollHeight;
- }
- function simpleReply(raw){
-  const t=raw.toLocaleLowerCase('hu-HU');
-  if(/szia|helló|hello|hali|üdv/.test(t))return 'Szia! 😊 Miről beszélgessünk?';
-  if(/ki vagy|neved|robot|bot vagy/.test(t))return 'Predator Bot vagyok, a Predator Chat beszélgetős botja.';
-  if(/predator|chat|szoba/.test(t))return 'A valódi tagokkal a Chat/Szobák résznél beszélgethetsz. Én a külön ChatBot menüpontban és a Predator Botszobában vagyok.';
-  if(/játék|kocka|x.?o/.test(t))return 'A Játékok menüpontban találod a kockadobást és az X–O játékot. 🎮';
-  if(/köszönöm|köszi/.test(t))return 'Nagyon szívesen! 😊';
-  if(/hogy vagy/.test(t))return 'Készen állok a beszélgetésre. Te miről szeretnél beszélni?';
-  if(/segíts|mit tudsz/.test(t))return 'Beszélgethetünk a Predator Chatről, játékokról vagy más általános témákról. Kérdezz bátran!';
-  if(t.endsWith('?'))return 'Érdekes kérdés! Az egyszerű botom még korlátozott válaszokat ismer. Válaszd az Okos AI módot a szabadabb válaszokhoz.';
-  return 'Értem. Mesélj még róla! 😊';
- }
- async function askAI(message){
-   const messages=[...history.slice(-12),{role:'user',content:message}];
-   const response=await fetch(AI_ENDPOINT,{
-     method:'POST',headers:{'Content-Type':'application/json'},
-     body:JSON.stringify({message,messages})
-   });
-   let data={};try{data=await response.json()}catch(_){}
-   if(!response.ok)throw new Error(data.error||('A szerver válasza: HTTP '+response.status));
-   const answer=String(data.reply||data.answer||data.output_text||'').trim();
-   if(!answer)throw new Error('Az AI-szerver nem adott választ.');
-   history.push({role:'user',content:message},{role:'assistant',content:answer});
-   if(history.length>24)history.splice(0,history.length-24);
-   return answer;
- }
- form.addEventListener('submit',async e=>{
-   e.preventDefault();if(busy)return;
-   const msg=input.value.trim();if(!msg)return;
-   addLine('Te',msg,'bot-user');input.value='';status.textContent='';
-   if(replyMode==='simple'){
-     history.push({role:'user',content:msg});
-     window.setTimeout(()=>{const answer=simpleReply(msg);history.push({role:'assistant',content:answer});addLine('Predator Bot',answer,'bot-reply');},180);
-     return;
-   }
-   busy=true;const send=form.querySelector('button[type="submit"]');if(send)send.disabled=true;
-   status.textContent='Predator AI válaszol…';
-   try{const answer=await askAI(msg);addLine('Predator AI',answer,'bot-reply');status.textContent='';}
-   catch(err){addLine('Predator AI','Most nem sikerült elérni az AI-t. '+(err.message||'Ellenőrizd a Render szerver beállítását.'),'bot-reply');status.textContent='Ellenőrizd, hogy a Renderen elérhető-e az /api/chat útvonal és be van-e állítva az OPENAI_API_KEY.';}
-   finally{busy=false;if(send)send.disabled=false;input.focus();}
- });
- $b('botClear')?.addEventListener('click',()=>{
-   transcript.replaceChildren();history.length=0;
-   addLine(replyMode==='ai'?'Predator AI':'Predator Bot','Beszélgetés törölve. Szia! Miben segíthetek? 😊','bot-reply');status.textContent='';
- });
-})();
-</script>
-
 </body>
 </html>
 ```
-````
