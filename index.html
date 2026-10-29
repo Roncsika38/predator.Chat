@@ -211,6 +211,9 @@ button {
 @media(max-width:850px){.predator-layout{grid-template-columns:1fr}.predator-layout>main{padding:12px}}
   #chatImageFile{display:none}.chat-image{display:block;max-width:100%;max-height:420px;object-fit:contain;border-radius:12px;margin-top:8px}
 
+
+.bot-tabs{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0}.bot-tabs button{background:#111;color:#eee;border:1px solid #74202d;border-radius:10px;padding:10px 13px}.bot-tabs button.active{background:linear-gradient(135deg,#ff233c,#a90920)}.bot-transcript{height:300px;overflow:auto;background:#09090c;border:1px solid #43121b;border-radius:12px;padding:12px;margin:12px 0;display:flex;flex-direction:column;gap:9px}.bot-line{padding:10px 12px;border-radius:10px;max-width:95%;overflow-wrap:anywhere;white-space:pre-wrap}.bot-reply{background:#201116;border:1px solid #54202b;align-self:flex-start}.bot-user{background:#37111a;border:1px solid #9d1d32;align-self:flex-end}.bot-compose{display:flex;gap:8px}.bot-compose input{flex:1;min-width:0}.secondary{background:#24242b;border:1px solid #5b2630}@media(max-width:620px){.bot-transcript{height:48vh;min-height:220px}.bot-compose button{padding:10px}}
+
 </style>
 <style>
 #onlineMemberList .member-item {
@@ -393,8 +396,23 @@ h2,h3{margin-top:6px;color:#fff}
 </section>
 <section id="app" class="hidden">
   <nav class="tabs">
-  <button data-tab="chat" class="active">🏠 Főoldal / Chat</button><button data-tab="music">🎵 Zene</button><button data-tab="radio">📻 Rádió</button><button data-tab="games">🎮 Játékok</button><button data-tab="chat">▣ Szobák</button><button data-tab="members">👥 Felhasználók</button><button data-tab="private">✉ Privát üzenetek</button><button data-tab="profile">👤 Profil</button><button data-tab="admin" id="adminTab" class="hidden">♛ Adminpanel</button>
+  <button data-tab="chat" class="active">🏠 Főoldal / Chat</button><button data-tab="music">🎵 Zene</button><button data-tab="radio">📻 Rádió</button><button data-tab="games">🎮 Játékok</button><button data-tab="bot">🤖 ChatBot</button><button data-tab="chat">▣ Szobák</button><button data-tab="members">👥 Felhasználók</button><button data-tab="private">✉ Privát üzenetek</button><button data-tab="profile">👤 Profil</button><button data-tab="admin" id="adminTab" class="hidden">♛ Adminpanel</button>
   </nav>
+<section id="bot" class="panel hidden">
+  <h2>🤖 Predator ChatBot</h2>
+  <p class="muted">Külön chatbot menüpont és botszoba. A sima bot azonnal válaszol előre beállított válaszokkal; az okos AI-hoz biztonságos szerveroldali AI-kapcsolat szükséges.</p>
+  <div class="bot-tabs">
+    <button type="button" class="active" data-bot-mode="simple">💬 Beszélgetős bot</button>
+    <button type="button" data-bot-mode="ai">🧠 Okos AI</button>
+    <button type="button" data-bot-mode="room">🚪 Botszoba</button>
+  </div>
+  <p id="botModeDescription" class="muted small">Beszélgetős bot: kérdezz a Predator Chatről, játékokról vagy általános dolgokról.</p>
+  <div id="botTranscript" class="bot-transcript" aria-live="polite" aria-label="ChatBot beszélgetés"><div class="bot-line bot-reply"><b>Predator Bot:</b> Szia! Írj nekem valamit, és beszélgessünk. 😊</div></div>
+  <form id="botForm" class="bot-compose"><input id="botInput" maxlength="1000" placeholder="Írj a chatbotnak…" autocomplete="off" required><button type="submit">Küldés</button></form>
+  <p id="botStatus" class="muted small" role="status"></p>
+  <button type="button" id="botClear" class="secondary">🧹 Beszélgetés törlése</button>
+  <p class="muted small">Az okos AI mód addig jelzi a beállítás szükségességét, amíg nincs hozzá szerveroldali végpont. API-kulcsot ne tegyél a nyilvános HTML-fájlba. A bot nem küld üzenetet a valódi chatbe, és nem helyettesíti a valódi felhasználókat.</p>
+</section>
 <section id="games" class="panel hidden">
   <h2>🎮 Predator Játékok</h2>
   <p class="muted">Játssz egy gyors kockadobást, vagy hívd ki a melletted ülőt egy X–O párbajra. Ezek a játékok jelenleg ezen az eszközön futnak.</p>
@@ -724,7 +742,7 @@ $('forgotPassword').addEventListener('click', async () => {
 });
 $('newPasswordForm').addEventListener('submit',async e=>{e.preventDefault();const p1=$('newPassword').value,p2=$('newPasswordAgain').value;if(p1.length<6){status('A jelszónak legalább 6 karakteresnek kell lennie.');return}if(p1!==p2){status('A két jelszó nem egyezik.');return}status('Jelszó mentése…');const {error}=await db.auth.updateUser({password:p1});if(error){status('Nem sikerült megváltoztatni a jelszót: '+error.message);return}status('Sikerült megváltoztatni a jelszót.');$('newPasswordForm').reset();showRecovery(false);await db.auth.signOut();history.replaceState(null,'',location.pathname)});
 $('logout').addEventListener('click',async()=>{await db.auth.signOut()});
-document.querySelectorAll('[data-tab]').forEach(button=>{button.addEventListener('click',()=>{document.querySelectorAll('[data-tab]').forEach(b=>b.classList.toggle('active',b===button));['chat','music','radio','games','members','private','profile','admin'].forEach(id=>$(id).classList.add('hidden'));$(button.dataset.tab).classList.remove('hidden');if(button.dataset.tab==='members')loadMembers();if(button.dataset.tab==='private')loadPrivateMessages()})});
+document.querySelectorAll('[data-tab]').forEach(button=>{button.addEventListener('click',()=>{document.querySelectorAll('[data-tab]').forEach(b=>b.classList.toggle('active',b===button));['chat','music','radio','games','bot','members','private','profile','admin'].forEach(id=>$(id).classList.add('hidden'));$(button.dataset.tab).classList.remove('hidden');if(button.dataset.tab==='members')loadMembers();if(button.dataset.tab==='private')loadPrivateMessages()})});
 const OWNER_USER_ID='aef906e3-f704-4a28-b3c2-6a1373c5c4f5';
 async function checkAdmin(){
   const {data,error}=await db.from('chat_roles').select('role').eq('user_id',currentUser.id).maybeSingle();
@@ -1586,6 +1604,22 @@ async function moderateMember(action){
  function restart(){board=Array(9).fill('');turn='X';finished=false;cells.forEach(c=>{c.textContent='';c.disabled=false;c.classList.remove('x','o');});xoStatus.textContent='X következik';}
  cells.forEach(cell=>cell.addEventListener('click',()=>{const i=Number(cell.dataset.cell);if(finished||board[i])return;board[i]=turn;cell.textContent=turn;cell.classList.add(turn.toLowerCase());cell.disabled=true;const won=wins.some(line=>line.every(index=>board[index]===turn));if(won){finished=true;score[turn]++;xoStatus.textContent='🎉 '+turn+' nyert!';cells.forEach(c=>c.disabled=true);updateScore();return;}if(board.every(Boolean)){finished=true;score.draw++;xoStatus.textContent='🤝 Döntetlen!';updateScore();return;}turn=turn==='X'?'O':'X';xoStatus.textContent=turn+' következik';}));
  if($g('xoRestart'))$g('xoRestart').addEventListener('click',restart);updateScore();
+})();
+</script>
+
+
+<script id="predator-chatbot-script">
+(function(){
+ const $b=id=>document.getElementById(id);
+ const form=$b('botForm'),input=$b('botInput'),transcript=$b('botTranscript'),status=$b('botStatus'),desc=$b('botModeDescription');
+ if(!form||!input||!transcript)return;
+ let mode='simple';
+ const descriptions={simple:'Beszélgetős bot: előre beállított válaszokkal azonnal működik.',ai:'Okos AI mód: ehhez biztonságos szerveroldali AI-végpontot kell beállítani; API-kulcsot ne tegyél a böngészőbe.',room:'Botszoba: ez a külön chatbot beszélgetés, nem a valódi felhasználók szobája.'};
+ document.querySelectorAll('[data-bot-mode]').forEach(btn=>btn.addEventListener('click',()=>{mode=btn.dataset.botMode;document.querySelectorAll('[data-bot-mode]').forEach(x=>x.classList.toggle('active',x===btn));desc.textContent=descriptions[mode];status.textContent=mode==='ai'?'Az AI-végpont még nincs beállítva. A biztonságos szerverkapcsolat elkészítése szükséges.':'';input.placeholder=mode==='room'?'Írj a botszobába…':'Írj a chatbotnak…';input.focus();}));
+ function addLine(who,text,cls){const div=document.createElement('div');div.className='bot-line '+cls;const b=document.createElement('b');b.textContent=who+': ';div.append(b,document.createTextNode(text));transcript.append(div);transcript.scrollTop=transcript.scrollHeight;}
+ function simpleReply(raw){const t=raw.toLocaleLowerCase('hu-HU');if(/szia|helló|hello|hali|üdv/.test(t))return 'Szia! 😊 Miről beszélgessünk?';if(/ki vagy|neved|robot|bot vagy/.test(t))return 'Predator Bot vagyok, a chat külön beszélgetős botja.';if(/predator|chat|szoba/.test(t))return 'A Predator Chatben a valódi tagokkal a Szobák menüpontban tudsz beszélgetni. Én a külön ChatBot menüpontban vagyok.';if(/játék|kocka|x.?o/.test(t))return 'A Játékok menüpontban találod a kockadobást és az X–O játékot. 🎮';if(/köszönöm|köszi/.test(t))return 'Nagyon szívesen! 😊';if(/hogy vagy/.test(t))return 'Köszönöm, készen állok a beszélgetésre. Te miről szeretnél beszélni?';if(/segíts|mit tudsz/.test(t))return 'Beszélgethetünk a Predator Chatről, a játékokról vagy általános témákról. Kérdezz bátran!';if(t.endsWith('?'))return 'Érdekes kérdés! Az egyszerű botom még csak korlátozott válaszokat ismer. Az okos AI módhoz külön, biztonságos AI-szerverkapcsolatot kell beállítani.';return 'Értem. Mesélj még róla! 😊 Az egyszerű botom előre beállított válaszokat ad; az okosabb válaszokhoz AI-kapcsolat szükséges.';}
+ form.addEventListener('submit',async e=>{e.preventDefault();const msg=input.value.trim();if(!msg)return;addLine('Te',msg,'bot-user');input.value='';if(mode==='ai'){addLine('Predator AI','Az okos AI még nincs összekötve a szerverrel. Ehhez szerveroldali AI-végpont kell, hogy a titkos API-kulcs biztonságban maradjon.','bot-reply');status.textContent='AI-kapcsolat nincs beállítva; az API-kulcsot ne tedd a HTML-be.';return;}status.textContent='';window.setTimeout(()=>addLine('Predator Bot',simpleReply(msg),'bot-reply'),180);});
+ $b('botClear')?.addEventListener('click',()=>{transcript.replaceChildren();addLine('Predator Bot','Beszélgetés törölve. Szia! Miben segíthetek? 😊','bot-reply');status.textContent='';});
 })();
 </script>
 
