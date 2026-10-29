@@ -340,6 +340,21 @@ h2,h3{margin-top:6px;color:#fff}
 @media(max-width:620px){#predatorRadioPlayer{padding:12px;margin:10px 0}}
 </style>
 
+
+<style id="predator-games-style">
+#games .games-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr));gap:16px;margin-top:16px}
+#games .game-card{background:linear-gradient(145deg,#1b0b10,#09090d);border:1px solid #8d1b30;border-radius:16px;padding:16px;min-width:0}
+#games .game-card h3{margin-top:0;color:#ff6475}
+#games .game-status{min-height:24px;color:#ffc0c8;font-weight:600;margin:12px 0}
+#games .dice-face{font-size:76px;text-align:center;padding:14px;line-height:1.2}
+#games .dice-controls{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
+#games .xo-board{display:grid;grid-template-columns:repeat(3,minmax(60px,90px));gap:7px;justify-content:center;margin:14px auto}
+#games .xo-cell{height:clamp(60px,18vw,90px);font-size:clamp(30px,8vw,46px);font-weight:800;padding:0;background:#17080d;border:1px solid #a52b42;border-radius:12px;color:#fff}
+#games .xo-cell:disabled{opacity:1;cursor:default}
+#games .xo-cell.x{color:#ff5368}#games .xo-cell.o{color:#fff}
+#games .game-note{font-size:13px;color:#bdbdc7}
+</style>
+
 </head>
 <body>
 <header>
@@ -378,8 +393,35 @@ h2,h3{margin-top:6px;color:#fff}
 </section>
 <section id="app" class="hidden">
   <nav class="tabs">
-  <button data-tab="chat" class="active">🏠 Főoldal / Chat</button><button data-tab="music">🎵 Zene</button><button data-tab="radio">📻 Rádió</button><button data-tab="chat">▣ Szobák</button><button data-tab="members">👥 Felhasználók</button><button data-tab="private">✉ Privát üzenetek</button><button data-tab="profile">👤 Profil</button><button data-tab="admin" id="adminTab" class="hidden">♛ Adminpanel</button>
-  </nav><section id="music" class="panel hidden">
+  <button data-tab="chat" class="active">🏠 Főoldal / Chat</button><button data-tab="music">🎵 Zene</button><button data-tab="radio">📻 Rádió</button><button data-tab="games">🎮 Játékok</button><button data-tab="chat">▣ Szobák</button><button data-tab="members">👥 Felhasználók</button><button data-tab="private">✉ Privát üzenetek</button><button data-tab="profile">👤 Profil</button><button data-tab="admin" id="adminTab" class="hidden">♛ Adminpanel</button>
+  </nav>
+<section id="games" class="panel hidden">
+  <h2>🎮 Predator Játékok</h2>
+  <p class="muted">Játssz egy gyors kockadobást, vagy hívd ki a melletted ülőt egy X–O párbajra. Ezek a játékok jelenleg ezen az eszközön futnak.</p>
+  <div class="games-grid">
+    <div class="game-card">
+      <h3>🎲 Kockadobás</h3>
+      <p>Nyomj a dobásra, és nézd meg, hányast dobtál!</p>
+      <div id="diceFace" class="dice-face" aria-live="polite">⚀</div>
+      <div class="dice-controls"><button id="rollDice">🎲 Dobás</button><button id="resetDice" type="button">Új kör</button></div>
+      <p id="diceStatus" class="game-status" aria-live="polite">Készen állsz a dobásra?</p>
+      <p id="diceScore" class="game-note">Dobások: 0 · Összesen: 0</p>
+    </div>
+    <div class="game-card">
+      <h3>❌⭕ X–O játék</h3>
+      <p>Két játékos felváltva lép ugyanazon az eszközön. Az nyer, aki előbb kirak három jelet egy sorba.</p>
+      <p id="xoStatus" class="game-status" aria-live="polite">X következik</p>
+      <div id="xoBoard" class="xo-board" role="group" aria-label="X–O játéktábla">
+        <button class="xo-cell" data-cell="0" aria-label="1. mező"></button><button class="xo-cell" data-cell="1" aria-label="2. mező"></button><button class="xo-cell" data-cell="2" aria-label="3. mező"></button>
+        <button class="xo-cell" data-cell="3" aria-label="4. mező"></button><button class="xo-cell" data-cell="4" aria-label="5. mező"></button><button class="xo-cell" data-cell="5" aria-label="6. mező"></button>
+        <button class="xo-cell" data-cell="6" aria-label="7. mező"></button><button class="xo-cell" data-cell="7" aria-label="8. mező"></button><button class="xo-cell" data-cell="8" aria-label="9. mező"></button>
+      </div>
+      <div class="dice-controls"><button id="xoRestart" type="button">🔄 Új játék</button></div>
+      <p id="xoScore" class="game-note">X győzelmek: 0 · O győzelmek: 0 · Döntetlen: 0</p>
+    </div>
+  </div>
+</section>
+<section id="music" class="panel hidden">
   <h2>🎵 Predator Zene</h2>
   <p>Tölts fel zenét, vagy hallgasd meg a tagok által feltöltött zenéket!</p>
 
@@ -682,7 +724,7 @@ $('forgotPassword').addEventListener('click', async () => {
 });
 $('newPasswordForm').addEventListener('submit',async e=>{e.preventDefault();const p1=$('newPassword').value,p2=$('newPasswordAgain').value;if(p1.length<6){status('A jelszónak legalább 6 karakteresnek kell lennie.');return}if(p1!==p2){status('A két jelszó nem egyezik.');return}status('Jelszó mentése…');const {error}=await db.auth.updateUser({password:p1});if(error){status('Nem sikerült megváltoztatni a jelszót: '+error.message);return}status('Sikerült megváltoztatni a jelszót.');$('newPasswordForm').reset();showRecovery(false);await db.auth.signOut();history.replaceState(null,'',location.pathname)});
 $('logout').addEventListener('click',async()=>{await db.auth.signOut()});
-document.querySelectorAll('[data-tab]').forEach(button=>{button.addEventListener('click',()=>{document.querySelectorAll('[data-tab]').forEach(b=>b.classList.toggle('active',b===button));['chat','music','radio','members','private','profile','admin'].forEach(id=>$(id).classList.add('hidden'));$(button.dataset.tab).classList.remove('hidden');if(button.dataset.tab==='members')loadMembers();if(button.dataset.tab==='private')loadPrivateMessages()})});
+document.querySelectorAll('[data-tab]').forEach(button=>{button.addEventListener('click',()=>{document.querySelectorAll('[data-tab]').forEach(b=>b.classList.toggle('active',b===button));['chat','music','radio','games','members','private','profile','admin'].forEach(id=>$(id).classList.add('hidden'));$(button.dataset.tab).classList.remove('hidden');if(button.dataset.tab==='members')loadMembers();if(button.dataset.tab==='private')loadPrivateMessages()})});
 const OWNER_USER_ID='aef906e3-f704-4a28-b3c2-6a1373c5c4f5';
 async function checkAdmin(){
   const {data,error}=await db.from('chat_roles').select('role').eq('user_id',currentUser.id).maybeSingle();
@@ -1528,6 +1570,25 @@ async function moderateMember(action){
   chooseStation();
 })();
 </script>
+
+<script id="predator-games-script">
+(function(){
+ const $g=id=>document.getElementById(id);
+ const diceFaces=['⚀','⚁','⚂','⚃','⚄','⚅'];let diceRolls=0,diceTotal=0;
+ const roll=$g('rollDice'),face=$g('diceFace'),diceStatus=$g('diceStatus'),diceScore=$g('diceScore');
+ if(roll&&face&&diceStatus&&diceScore){
+  roll.addEventListener('click',()=>{const n=Math.floor(Math.random()*6)+1;face.textContent=diceFaces[n-1];diceRolls++;diceTotal+=n;diceStatus.textContent='Dobás eredménye: '+n+'!';diceScore.textContent='Dobások: '+diceRolls+' · Összesen: '+diceTotal;});
+  $g('resetDice').addEventListener('click',()=>{diceRolls=0;diceTotal=0;face.textContent='⚀';diceStatus.textContent='Készen állsz a dobásra?';diceScore.textContent='Dobások: 0 · Összesen: 0';});
+ }
+ const cells=[...document.querySelectorAll('#xoBoard [data-cell]')],xoStatus=$g('xoStatus'),xoScore=$g('xoScore');
+ let board=Array(9).fill(''),turn='X',finished=false,score={X:0,O:0,draw:0};const wins=[[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
+ function updateScore(){xoScore.textContent='X győzelmek: '+score.X+' · O győzelmek: '+score.O+' · Döntetlen: '+score.draw;}
+ function restart(){board=Array(9).fill('');turn='X';finished=false;cells.forEach(c=>{c.textContent='';c.disabled=false;c.classList.remove('x','o');});xoStatus.textContent='X következik';}
+ cells.forEach(cell=>cell.addEventListener('click',()=>{const i=Number(cell.dataset.cell);if(finished||board[i])return;board[i]=turn;cell.textContent=turn;cell.classList.add(turn.toLowerCase());cell.disabled=true;const won=wins.some(line=>line.every(index=>board[index]===turn));if(won){finished=true;score[turn]++;xoStatus.textContent='🎉 '+turn+' nyert!';cells.forEach(c=>c.disabled=true);updateScore();return;}if(board.every(Boolean)){finished=true;score.draw++;xoStatus.textContent='🤝 Döntetlen!';updateScore();return;}turn=turn==='X'?'O':'X';xoStatus.textContent=turn+' következik';}));
+ if($g('xoRestart'))$g('xoRestart').addEventListener('click',restart);updateScore();
+})();
+</script>
+
 </body>
 </html>
 ```
