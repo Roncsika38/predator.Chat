@@ -539,6 +539,18 @@ h2,h3{margin-top:6px;color:#fff}
       <form id="createRoomForm" class="form"><input id="newRoomName" maxlength="60" placeholder="Új szoba neve" required><button type="submit">Szoba létrehozása</button></form>
       <p id="roomAdminStatus" class="muted" role="status"></p>
     </div>
+    <div id="vipAdminTools" class="panel hidden">
+      <h3>👑 VIP-jogosultság kezelése</h3>
+      <p class="muted">Csak a Predator Chat tulajdonosa adhat vagy vehet el ingyenes VIP-et.</p>
+      <form id="vipAdminForm" class="form">
+        <input id="vipTargetUsername" placeholder="Tag megjelenő neve" autocomplete="off" minlength="3" maxlength="32" required>
+        <div class="actions">
+          <button type="submit">👑 Ingyenes VIP adása</button>
+          <button type="button" id="removeVipButton" style="background:#29292f;border:1px solid #555">VIP elvétele</button>
+        </div>
+      </form>
+      <p id="vipAdminStatus" class="muted" role="status"></p>
+    </div>
     <div id="roleAdminTools" class="panel hidden">
       <h3>🔐 Szerepkör kezelése</h3>
       <p class="muted">Írd be a tag chatben használt felhasználónevét. UUID-t nem kell megadnod.</p>
@@ -739,7 +751,7 @@ async function checkAdmin(){
   if(error){
     $('adminTab').classList.toggle('hidden',!isOwner);
     $('roomAdminTools').classList.toggle('hidden',!isOwner);
-    $('roleAdminTools').classList.toggle('hidden',!isOwner);
+    $('roleAdminTools').classList.toggle('hidden',!isOwner);$('vipAdminTools').classList.toggle('hidden',!isOwner);
     $('adminStatus').textContent='Adminellenőrzési hiba: '+error.message+(isOwner?' A tulajdonosi azonosító egyezik.':'');
     return;
   }
@@ -747,9 +759,29 @@ async function checkAdmin(){
   isPredatorOwner=!!isOwner; isPredatorAdmin=!!isAdmin;
   $('adminTab').classList.toggle('hidden',!isAdmin);
   $('roomAdminTools').classList.toggle('hidden',!isAdmin);
-  $('roleAdminTools').classList.toggle('hidden',!isOwner);
+  $('roleAdminTools').classList.toggle('hidden',!isOwner);$('vipAdminTools').classList.toggle('hidden',!isOwner);
   $('adminStatus').textContent=isAdmin?(isOwner?'Tulajdonosi fiókkal vagy belépve.':'Adminisztrátori fiókkal vagy belépve.'):'Ehhez a fiókhoz nincs adminjog. A tulajdonosi azonosítót és a chat_roles táblát ellenőrizni kell.';
 }
+async function setVipForUsername(active){
+  const username=$('vipTargetUsername').value.trim();
+  const out=$('vipAdminStatus');
+  if(!currentUser || String(currentUser.id)!==OWNER_USER_ID){out.textContent='Ehhez csak a tulajdonosi fiók jogosult.';return;}
+  if(username.length<3){out.textContent='Írd be a tag legalább 3 karakteres megjelenő nevét.';return;}
+  const buttons=$('vipAdminForm').querySelectorAll('button');
+  buttons.forEach(b=>b.disabled=true);
+  out.textContent=active?'VIP-jogosultság adása…':'VIP-jogosultság visszavonása…';
+  try{
+    const {data,error}=await db.rpc('predator_admin_set_vip_by_username',{p_username:username,p_active:active});
+    if(error)throw error;
+    out.textContent=active?'Sikeresen ingyen VIP-et adtál ennek a tagnak: '+username+'.':'A VIP-jogosultságot visszavontad ennél a tagnál: '+username+'.';
+    $('vipTargetUsername').value='';
+  }catch(err){
+    out.textContent='Nem sikerült: '+(err?.message||'Ismeretlen hiba')+'. Ellenőrizd, hogy a VIP-admin SQL lefutott-e.';
+  }finally{buttons.forEach(b=>b.disabled=false);}
+}
+$('vipAdminForm').addEventListener('submit',async e=>{e.preventDefault();await setVipForUsername(true);});
+$('removeVipButton').addEventListener('click',async()=>{await setVipForUsername(false);});
+
 $('createRoomForm').addEventListener('submit',async e=>{
   e.preventDefault();if(!currentUser){$('roomAdminStatus').textContent='Előbb jelentkezz be.';return}
   const name=$('newRoomName').value.trim();if(!name){$('roomAdminStatus').textContent='Írd be a szoba nevét.';return}
@@ -1232,7 +1264,7 @@ $('onlineMembersStatus').textContent='Nincs online tag';
     }
   }
   $('auth').classList.toggle('hidden',loggedIn||recoveryMode);$('app').classList.toggle('hidden',!loggedIn||recoveryMode);$('logout').classList.toggle('hidden',!loggedIn);$('userbar').textContent=loggedIn?(profileCache.get(String(currentUser.id))?.display_name||currentUser.user_metadata?.username||currentUser.user_metadata?.display_name||'Bejelentkezve'):'Nincs bejelentkezve';
-  if(!loggedIn){if(messageChannel){db.removeChannel(messageChannel);messageChannel=null}currentRoom=null;$('messages').replaceChildren();$('adminTab').classList.add('hidden');$('roomAdminTools').classList.add('hidden');$('roleAdminTools').classList.add('hidden');return}
+  if(!loggedIn){if(messageChannel){db.removeChannel(messageChannel);messageChannel=null}currentRoom=null;$('messages').replaceChildren();$('adminTab').classList.add('hidden');$('roomAdminTools').classList.add('hidden');$('roleAdminTools').classList.add('hidden');$('vipAdminTools').classList.add('hidden');return}
   $('profileEmail').textContent='';$('displayName').value=profileCache.get(String(currentUser.id))?.display_name||currentUser.email?.split('@')[0]||'';
   await loadProfileCache();
   const oldProfile=profileCache.get(String(currentUser.id))||{};
