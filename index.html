@@ -1,3 +1,4 @@
+````
 ```
 <!DOCTYPE html>
 <html lang="hu">
@@ -400,7 +401,7 @@ h2,h3{margin-top:6px;color:#fff}
   </nav>
 <section id="bot" class="panel hidden">
   <h2>🤖 Predator ChatBot</h2>
-  <p class="muted">Külön chatbot menüpont és botszoba. A sima bot azonnal válaszol előre beállított válaszokkal; az okos AI-hoz biztonságos szerveroldali AI-kapcsolat szükséges.</p>
+  <p class="muted">A ChatBot menüpontban és a bal oldali Predator Botszoba gombbal is elérhető. Választhatsz egyszerű beszélgetős botot vagy valódi AI-t. A valódi chat a tagok között változatlanul működik.</p>
   <div class="bot-tabs">
     <button type="button" class="active" data-bot-mode="simple">💬 Beszélgetős bot</button>
     <button type="button" data-bot-mode="ai">🧠 Okos AI</button>
@@ -411,7 +412,7 @@ h2,h3{margin-top:6px;color:#fff}
   <form id="botForm" class="bot-compose"><input id="botInput" maxlength="1000" placeholder="Írj a chatbotnak…" autocomplete="off" required><button type="submit">Küldés</button></form>
   <p id="botStatus" class="muted small" role="status"></p>
   <button type="button" id="botClear" class="secondary">🧹 Beszélgetés törlése</button>
-  <p class="muted small">Az okos AI mód addig jelzi a beállítás szükségességét, amíg nincs hozzá szerveroldali végpont. API-kulcsot ne tegyél a nyilvános HTML-fájlba. A bot nem küld üzenetet a valódi chatbe, és nem helyettesíti a valódi felhasználókat.</p>
+  <p class="muted small">Az AI-mód a meglévő Render-szerver /api/chat végpontját használja. Ehhez a mellékelt szerveroldali útvonalat be kell illeszteni a Renderen futó szerverbe, és az OPENAI_API_KEY kulcsot a Render Environment beállításaiban kell megadni. A bot nem küld üzenetet a valódi chatbe.</p>
 </section>
 <section id="games" class="panel hidden">
   <h2>🎮 Predator Játékok</h2>
@@ -789,6 +790,10 @@ async function loadRooms(){
   if(error){chatStatus('Nem tölthetők be a szobák: '+error.message);return}
   roomList=data||[];$('rooms').replaceChildren();
   roomList.forEach(room=>{const name=room.name||room.title||room.slug||'Szoba';const b=document.createElement('button');b.textContent='💬 '+name;b.addEventListener('click',()=>selectRoom(room));$('rooms').append(b)});
+  const botRoom=document.createElement('button');
+  botRoom.type='button';botRoom.textContent='🤖 Predator Botszoba';botRoom.id='predatorBotRoomShortcut';
+  botRoom.addEventListener('click',()=>{document.querySelector('[data-tab="bot"]')?.click();document.querySelector('[data-bot-mode="room"]')?.click();});
+  $('rooms').append(botRoom);
   if(!currentRoom&&roomList.length)selectRoom(roomList[0]);if(!roomList.length)chatStatus('Még nincs szoba a rooms táblában.');
 }
 function selectRoom(room){currentRoom=room;const name=room.name||room.title||room.slug||'Szoba';$('roomTitle').textContent=name;document.querySelectorAll('#rooms button').forEach(b=>b.classList.toggle('active',b.textContent==='💬 '+name));if(messageChannel){db.removeChannel(messageChannel);messageChannel=null}loadMessages();messageChannel=db.channel('room-'+room.id).on('postgres_changes',{event:'INSERT',schema:'public',table:'messages',filter:'room_id=eq.'+room.id},payload=>renderMessage(payload.new)).subscribe()}
@@ -1613,16 +1618,81 @@ async function moderateMember(action){
  const $b=id=>document.getElementById(id);
  const form=$b('botForm'),input=$b('botInput'),transcript=$b('botTranscript'),status=$b('botStatus'),desc=$b('botModeDescription');
  if(!form||!input||!transcript)return;
- let mode='simple';
- const descriptions={simple:'Beszélgetős bot: előre beállított válaszokkal azonnal működik.',ai:'Okos AI mód: ehhez biztonságos szerveroldali AI-végpontot kell beállítani; API-kulcsot ne tegyél a böngészőbe.',room:'Botszoba: ez a külön chatbot beszélgetés, nem a valódi felhasználók szobája.'};
- document.querySelectorAll('[data-bot-mode]').forEach(btn=>btn.addEventListener('click',()=>{mode=btn.dataset.botMode;document.querySelectorAll('[data-bot-mode]').forEach(x=>x.classList.toggle('active',x===btn));desc.textContent=descriptions[mode];status.textContent=mode==='ai'?'Az AI-végpont még nincs beállítva. A biztonságos szerverkapcsolat elkészítése szükséges.':'';input.placeholder=mode==='room'?'Írj a botszobába…':'Írj a chatbotnak…';input.focus();}));
- function addLine(who,text,cls){const div=document.createElement('div');div.className='bot-line '+cls;const b=document.createElement('b');b.textContent=who+': ';div.append(b,document.createTextNode(text));transcript.append(div);transcript.scrollTop=transcript.scrollHeight;}
- function simpleReply(raw){const t=raw.toLocaleLowerCase('hu-HU');if(/szia|helló|hello|hali|üdv/.test(t))return 'Szia! 😊 Miről beszélgessünk?';if(/ki vagy|neved|robot|bot vagy/.test(t))return 'Predator Bot vagyok, a chat külön beszélgetős botja.';if(/predator|chat|szoba/.test(t))return 'A Predator Chatben a valódi tagokkal a Szobák menüpontban tudsz beszélgetni. Én a külön ChatBot menüpontban vagyok.';if(/játék|kocka|x.?o/.test(t))return 'A Játékok menüpontban találod a kockadobást és az X–O játékot. 🎮';if(/köszönöm|köszi/.test(t))return 'Nagyon szívesen! 😊';if(/hogy vagy/.test(t))return 'Köszönöm, készen állok a beszélgetésre. Te miről szeretnél beszélni?';if(/segíts|mit tudsz/.test(t))return 'Beszélgethetünk a Predator Chatről, a játékokról vagy általános témákról. Kérdezz bátran!';if(t.endsWith('?'))return 'Érdekes kérdés! Az egyszerű botom még csak korlátozott válaszokat ismer. Az okos AI módhoz külön, biztonságos AI-szerverkapcsolatot kell beállítani.';return 'Értem. Mesélj még róla! 😊 Az egyszerű botom előre beállított válaszokat ad; az okosabb válaszokhoz AI-kapcsolat szükséges.';}
- form.addEventListener('submit',async e=>{e.preventDefault();const msg=input.value.trim();if(!msg)return;addLine('Te',msg,'bot-user');input.value='';if(mode==='ai'){addLine('Predator AI','Az okos AI még nincs összekötve a szerverrel. Ehhez szerveroldali AI-végpont kell, hogy a titkos API-kulcs biztonságban maradjon.','bot-reply');status.textContent='AI-kapcsolat nincs beállítva; az API-kulcsot ne tedd a HTML-be.';return;}status.textContent='';window.setTimeout(()=>addLine('Predator Bot',simpleReply(msg),'bot-reply'),180);});
- $b('botClear')?.addEventListener('click',()=>{transcript.replaceChildren();addLine('Predator Bot','Beszélgetés törölve. Szia! Miben segíthetek? 😊','bot-reply');status.textContent='';});
+ // A titkos API-kulcs kizárólag a Render szerveren marad.
+ const AI_ENDPOINT='https://hodog-chat.onrender.com/api/chat';
+ let replyMode='simple',viewMode='bot',busy=false;
+ const history=[];
+ const descriptions={
+  simple:'Beszélgetős bot: előre megadott válaszokkal azonnal működik.',
+  ai:'Okos AI: a Render szerveren keresztül valódi AI-válaszokat kér.',
+  room:'Botszoba nézet: ugyanaz a beszélgetés itt külön botszobaként jelenik meg.'
+ };
+ document.querySelectorAll('[data-bot-mode]').forEach(btn=>btn.addEventListener('click',()=>{
+   const selected=btn.dataset.botMode;
+   if(selected==='simple'||selected==='ai')replyMode=selected;
+   viewMode=selected==='room'?'room':'bot';
+   document.querySelectorAll('[data-bot-mode]').forEach(x=>x.classList.toggle('active',x===btn));
+   desc.textContent=viewMode==='room'
+    ?'Predator Botszoba · '+(replyMode==='ai'?'Okos AI válaszol.':'Beszélgetős bot válaszol.')+' A valódi tagok chatje külön működik.'
+    :descriptions[replyMode];
+   status.textContent='';
+   input.placeholder=viewMode==='room'?'Írj a Predator Botszobába…':'Írj a chatbotnak…';
+   input.focus();
+ }));
+ function addLine(who,text,cls){
+   const div=document.createElement('div');div.className='bot-line '+cls;
+   const b=document.createElement('b');b.textContent=who+': ';
+   div.append(b,document.createTextNode(String(text||'')));transcript.append(div);transcript.scrollTop=transcript.scrollHeight;
+ }
+ function simpleReply(raw){
+  const t=raw.toLocaleLowerCase('hu-HU');
+  if(/szia|helló|hello|hali|üdv/.test(t))return 'Szia! 😊 Miről beszélgessünk?';
+  if(/ki vagy|neved|robot|bot vagy/.test(t))return 'Predator Bot vagyok, a Predator Chat beszélgetős botja.';
+  if(/predator|chat|szoba/.test(t))return 'A valódi tagokkal a Chat/Szobák résznél beszélgethetsz. Én a külön ChatBot menüpontban és a Predator Botszobában vagyok.';
+  if(/játék|kocka|x.?o/.test(t))return 'A Játékok menüpontban találod a kockadobást és az X–O játékot. 🎮';
+  if(/köszönöm|köszi/.test(t))return 'Nagyon szívesen! 😊';
+  if(/hogy vagy/.test(t))return 'Készen állok a beszélgetésre. Te miről szeretnél beszélni?';
+  if(/segíts|mit tudsz/.test(t))return 'Beszélgethetünk a Predator Chatről, játékokról vagy más általános témákról. Kérdezz bátran!';
+  if(t.endsWith('?'))return 'Érdekes kérdés! Az egyszerű botom még korlátozott válaszokat ismer. Válaszd az Okos AI módot a szabadabb válaszokhoz.';
+  return 'Értem. Mesélj még róla! 😊';
+ }
+ async function askAI(message){
+   const messages=[...history.slice(-12),{role:'user',content:message}];
+   const response=await fetch(AI_ENDPOINT,{
+     method:'POST',headers:{'Content-Type':'application/json'},
+     body:JSON.stringify({message,messages})
+   });
+   let data={};try{data=await response.json()}catch(_){}
+   if(!response.ok)throw new Error(data.error||('A szerver válasza: HTTP '+response.status));
+   const answer=String(data.reply||data.answer||data.output_text||'').trim();
+   if(!answer)throw new Error('Az AI-szerver nem adott választ.');
+   history.push({role:'user',content:message},{role:'assistant',content:answer});
+   if(history.length>24)history.splice(0,history.length-24);
+   return answer;
+ }
+ form.addEventListener('submit',async e=>{
+   e.preventDefault();if(busy)return;
+   const msg=input.value.trim();if(!msg)return;
+   addLine('Te',msg,'bot-user');input.value='';status.textContent='';
+   if(replyMode==='simple'){
+     history.push({role:'user',content:msg});
+     window.setTimeout(()=>{const answer=simpleReply(msg);history.push({role:'assistant',content:answer});addLine('Predator Bot',answer,'bot-reply');},180);
+     return;
+   }
+   busy=true;const send=form.querySelector('button[type="submit"]');if(send)send.disabled=true;
+   status.textContent='Predator AI válaszol…';
+   try{const answer=await askAI(msg);addLine('Predator AI',answer,'bot-reply');status.textContent='';}
+   catch(err){addLine('Predator AI','Most nem sikerült elérni az AI-t. '+(err.message||'Ellenőrizd a Render szerver beállítását.'),'bot-reply');status.textContent='Ellenőrizd, hogy a Renderen elérhető-e az /api/chat útvonal és be van-e állítva az OPENAI_API_KEY.';}
+   finally{busy=false;if(send)send.disabled=false;input.focus();}
+ });
+ $b('botClear')?.addEventListener('click',()=>{
+   transcript.replaceChildren();history.length=0;
+   addLine(replyMode==='ai'?'Predator AI':'Predator Bot','Beszélgetés törölve. Szia! Miben segíthetek? 😊','bot-reply');status.textContent='';
+ });
 })();
 </script>
 
 </body>
 </html>
 ```
+````
