@@ -404,35 +404,28 @@ h2,h3{margin-top:6px;color:#fff}
 </section>
   
  
-  <section id="radio" class="panel hidden">
+  <sec<section id="radio" class="panel hidden">
     <h2>📻 Predator Online Rádió</h2>
-    <p class="muted">A rádió külön menüpontban van, nem a taglistában. Az alábbi beépített lejátszóban a teljes rádiólistából választhatsz; a második lejátszóban a kiemelt adók is elérhetők.</p>
-    <div class="radio-catalog-box">
-      <h3>📻 Teljes rádióállomás-lista</h3>
-      <p class="muted small">Válassz rádióállomást és csatornát a lejátszóban, majd indítsd el a lejátszást.</p>
-      <iframe id="predatorRadioCatalog" title="Teljes online rádióállomás-lista és lejátszó" src="https://onlinestream.live/embed.cgi?id=2497&ch=1&volume=70&autoplay=0&channelselect=1&stationselect=1" loading="lazy" allow="autoplay; encrypted-media" referrerpolicy="strict-origin-when-cross-origin"></iframe>
-      <p class="muted small">Ha a beágyazott lejátszó nem töltődik be, <a href="https://onlinestream.live/embedcode.cgi" target="_blank" rel="noopener noreferrer">nyisd meg a teljes rádiólistát külön</a>.</p>
-    </div>
+    <p class="muted">A rádió külön menüpontban, a Predator Chaten belül található. Válassz állomást, majd nyomd meg a lejátszás gombot. A rádió nem nyit meg másik weboldalt.</p>
     <div id="predatorRadioPlayer">
-      <h3>⭐ Gyors választás – kedvelt állomások</h3>
-      <label for="predatorRadioSelect">Rádióállomás</label>
+      <h3>🎧 Rádióállomások</h3>
+      <label for="predatorRadioSelect">Válassz rádióállomást</label>
       <select id="predatorRadioSelect">
-        <option value="https://icast.connectmedia.hu/5001/live.mp3" data-home="https://myonlineradio.hu/retro-radio">Retro Rádió</option>
-        <option value="https://icast.connectmedia.hu/5201/live.mp3" data-home="https://myonlineradio.hu/radio-1">Rádió 1</option>
-        <option value="https://mr-stream.connectmedia.hu/4738/mr2.mp3" data-home="https://myonlineradio.hu/petofi-radio">Petőfi Rádió</option>
-        <option value="https://icast.connectmedia.hu/4736/mr1.mp3" data-home="https://myonlineradio.hu/kossuth-radio">Kossuth Rádió</option>
-        <option value="https://slagerfm.netregator.hu:7813/slagerfm128.mp3" data-home="https://myonlineradio.hu/slager-fm">Sláger FM</option>
-        <option value="https://radio.musorok.org/listen/jazzy/jazzy.mp3" data-home="https://myonlineradio.hu/jazzy-radio">Jazzy Rádió</option>
-        <option value="https://rockerradio.online/live.mp3" data-home="https://myonlineradio.hu/rocker-radio">Rocker Rádió</option>
+        <option value="https://icast.connectmedia.hu/5001/live.mp3">Retro Rádió</option>
+        <option value="https://icast.connectmedia.hu/5201/live.mp3">Rádió 1</option>
+        <option value="https://mr-stream.connectmedia.hu/4738/mr2.mp3">Petőfi Rádió</option>
+        <option value="https://icast.connectmedia.hu/4736/mr1.mp3">Kossuth Rádió</option>
+        <option value="https://slagerfm.netregator.hu:7813/slagerfm128.mp3">Sláger FM</option>
+        <option value="https://radio.musorok.org/listen/jazzy/jazzy.mp3">Jazzy Rádió</option>
+        <option value="https://rockerradio.online/live.mp3">Rocker Rádió</option>
       </select>
-      <audio id="predatorRadioAudio" controls preload="none" playsinline>
+      <audio id="predatorRadioAudio" controls preload="none" playsinline style="display:block;width:100%;margin:16px 0 10px">
         A böngésződ nem támogatja a beépített audiolejátszót.
       </audio>
       <p id="predatorRadioStatus" role="status">Válassz rádiót, majd kattints a lejátszásra.</p>
-      <a id="predatorRadioOpen" href="https://myonlineradio.hu/retro-radio" target="_blank" rel="noopener noreferrer">Állomás megnyitása a MyOnlineRadio.hu-n ↗</a>
     </div>
   </section>
-<section id="chat" class="layout predator-layout">
+tion id="chat" class="layout predator-layout">
   <aside class="panel">
     <h3>🔴 Szobák</h3>
     <div id="rooms"></div>
@@ -1492,36 +1485,24 @@ async function moderateMember(action){
 
 
 
-// Predator Chat – MyOnlineRadio oldalsó panel
-(function setupPredatorRadio(){
-  const select = document.getElementById('predatorRadioSelect');
-  const frame = document.getElementById('predatorRadioFrame');
-  const openLink = document.getElementById('predatorRadioOpen');
-  const toggle = document.getElementById('predatorRadioToggle');
-  const panel = document.getElementById('predatorRadio');
-  if (!select || !frame || !openLink || !toggle || !panel) return;
-  select.addEventListener('change', () => {
-    const url = select.value;
-    frame.src = url;
-    openLink.href = url;
-  });
-  toggle.addEventListener('click', () => {
-    const collapsed = panel.classList.toggle('is-collapsed');
-    toggle.textContent = collapsed ? 'Rádiópanel megnyitása' : 'Rádiópanel elrejtése';
-    toggle.setAttribute('aria-expanded', String(!collapsed));
-  });
-})();
+// A régi, külön oldalra mutató rádiópanel kódja eltávolítva.
 </script>
 
 <script>
 (function(){
-  const select=$('predatorRadioSelect'),audio=$('predatorRadioAudio'),status=$('predatorRadioStatus'),openLink=$('predatorRadioOpen');
-  if(!select||!audio||!status||!openLink)return;
-  function chooseStation(){const option=select.options[select.selectedIndex];audio.pause();audio.src=select.value;audio.load();openLink.href=option?.dataset.home||'https://myonlineradio.hu/';status.textContent='Kiválasztva: '+(option?.textContent||'rádió')+'. Nyomd meg a lejátszás gombot.';}
+  const select=$('predatorRadioSelect'),audio=$('predatorRadioAudio'),status=$('predatorRadioStatus');
+  if(!select||!audio||!status)return;
+  function chooseStation(){
+    const option=select.options[select.selectedIndex];
+    audio.pause();
+    audio.src=select.value;
+    audio.load();
+    status.textContent='Kiválasztva: '+(option?.textContent||'rádió')+'. Nyomd meg a lejátszás gombot.';
+  }
   select.addEventListener('change',chooseStation);
   audio.addEventListener('playing',()=>status.textContent='A rádió szól: '+select.options[select.selectedIndex].textContent+'.');
   audio.addEventListener('waiting',()=>status.textContent='Kapcsolódás a rádióhoz…');
-  audio.addEventListener('error',()=>status.textContent='Ez az adás most nem érhető el. Válassz másik állomást, vagy nyisd meg a MyOnlineRadio.hu oldalon.');
+  audio.addEventListener('error',()=>status.textContent='Ez az adás most nem érhető el. Válassz másik állomást; a chat nem nyit meg külső oldalt.');
   chooseStation();
 })();
 </script>
