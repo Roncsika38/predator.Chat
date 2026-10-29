@@ -570,7 +570,7 @@ const SUPABASE_URL = 'https://tmcbfjpwzeafixchsbqt.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_qRH3wqaMjDd0gPdvvzElBw_luhhqZLP';
 const db = window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
 const $ = id => document.getElementById(id);
-let currentUser=null,currentRoom=null,roomList=[],messageChannel=null,recoveryMode=false,privateRecipientId='',onlinePresenceChannel=null,onlineUserIds=new Set(),isPredatorAdmin=false,isPredatorOwner=false;
+let currentUser=null,currentRoom=null,roomList=[],messageChannel=null,recoveryMode=false,privateRecipientId='',onlinePresenceChannel=null,onlineUserIds=new Set(),isPredatorAdmin=false,isPredatorOwner=false,moderationPollTimer=null,moderationExitInProgress=false;
 const profileCache=new Map();
 const predatorRoleCache=new Map();
 const vipUserIds=new Set();
@@ -1267,11 +1267,18 @@ onlineUserIds.clear();
 $('onlineMemberList').replaceChildren();
 $('onlineMembersStatus').textContent='Nincs online tag';
   currentUser=session?.user||null;const loggedIn=!!currentUser;
+  if(moderationPollTimer){clearInterval(moderationPollTimer);moderationPollTimer=null;}
+  moderationExitInProgress=false;
   if(loggedIn){
-    const {data:moderation}=await db.from('predator_moderation').select('action,banned_until,reason').eq('user_id',currentUser.id).maybeSingle();
-    if(moderation && moderation.banned_until && (moderation.banned_until==='infinity' || new Date(moderation.banned_until)>new Date())){
+    const {data:moderation,error:moderationError}=await db.from('predator_moderation').select('action,banned_until,reason').eq('user_id',currentUser.id).maybeSingle();
+    if(moderationError){
+      console.warn('Moderálási állapot ellenőrzése sikertelen:',moderationError.message);
+    } else if(moderation && moderation.banned_until && (moderation.banned_until==='infinity' || new Date(moderation.banned_until)>new Date())){
+      const actionText=moderation.action==='kick'?'kidobott az adminisztrátor':moderation.banned_until==='infinity'?'véglegesen kitiltottak':'ideiglenesen kitiltottak';
+      const untilText=moderation.banned_until==='infinity'?'A tiltás végleges.':'A tiltás lejárata: '+new Date(moderation.banned_until).toLocaleString('hu-HU')+'.';
+      const reasonText=moderation.reason?' Indok: '+moderation.reason+'.':'';
       await db.auth.signOut(); currentUser=null; $('auth').classList.remove('hidden'); $('app').classList.add('hidden');
-      status(moderation.banned_until==='infinity'?'A fiók véglegesen tiltva van.':'A fiók ideiglenesen tiltva van eddig: '+new Date(moderation.banned_until).toLocaleString('hu-HU'));
+      status('A Predator Chatből '+actionText+'. '+untilText+reasonText+' Ha szerinted tévedés történt, keresd meg az adminisztrátort.');
       return;
     }
   }
@@ -1284,6 +1291,25 @@ $('onlineMembersStatus').textContent='Nincs online tag';
   if(ownProfileError)console.warn('Saját profil létrehozása nem sikerült:',ownProfileError.message);
   await loadProfileCache();
   await loadVipMemberships();
+  // A szerver-adatbázisban rögzített kidobást/tiltást az aktív munkamenet is rendszeresen ellenőrzi.
+  moderationPollTimer=setInterval(async()=>{
+    if(!currentUser||moderationExitInProgress)return;
+    const checkedUserId=currentUser.id;
+    const {data:mod,error:modError}=await db.from('predator_moderation').select('action,banned_until,reason').eq('user_id',checkedUserId).maybeSingle();
+    if(modError||!mod||!mod.banned_until)return;
+    const active=mod.banned_until==='infinity'||new Date(mod.banned_until)>new Date();
+    if(!active||String(currentUser?.id)!==String(checkedUserId))return;
+    moderationExitInProgress=true;
+    const actionText=mod.action==='kick'?'kidobott az adminisztrátor':mod.banned_until==='infinity'?'véglegesen kitiltottak':'ideiglenesen kitiltottak';
+    const untilText=mod.banned_until==='infinity'?'A tiltás végleges.':'A tiltás lejárata: '+new Date(mod.banned_until).toLocaleString('hu-HU')+'.';
+    const reasonText=mod.reason?' Indok: '+mod.reason+'.':'';
+    if(messageChannel){db.removeChannel(messageChannel);messageChannel=null;}
+    if(onlinePresenceChannel){db.removeChannel(onlinePresenceChannel);onlinePresenceChannel=null;}
+    await db.auth.signOut();
+    currentUser=null;
+    $('auth').classList.remove('hidden');$('app').classList.add('hidden');$('logout').classList.add('hidden');$('userbar').textContent='Nincs bejelentkezve';
+    status('A Predator Chatből '+actionText+'. '+untilText+reasonText+' A rendszer kijelentkeztetett. Ha szerinted tévedés történt, keresd meg az adminisztrátort.');
+  },4000);
 await checkAdmin();
 await loadRooms();
 await loadMembers();
