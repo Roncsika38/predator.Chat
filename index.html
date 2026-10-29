@@ -328,6 +328,10 @@ h2,h3{margin-top:6px;color:#fff}
 #radio.panel{min-height:300px}
 #predatorRadioPlayer{max-width:760px;margin:18px auto;padding:18px;background:linear-gradient(145deg,#17080d,#08080b);border:1px solid #8d1b30;border-radius:16px}
 #predatorRadioPlayer label{display:block;margin:12px 0 6px;font-weight:bold}
+.radio-catalog-box{max-width:900px;margin:18px auto;padding:14px;background:linear-gradient(145deg,#17080d,#08080b);border:1px solid #8d1b30;border-radius:16px}
+#predatorRadioCatalog{display:block;width:100%;height:260px;border:0;border-radius:10px;background:#08080b}
+.radio-catalog-box a{color:#ff6475}
+@media(max-width:620px){.radio-catalog-box{padding:10px;margin:10px 0}#predatorRadioCatalog{height:300px}}
 #predatorRadioSelect{width:100%;padding:12px}
 #predatorRadioAudio{display:block;width:100%;margin:16px 0 10px}
 #predatorRadioStatus{min-height:22px;color:#ff9aa8;font-size:13px}
@@ -402,8 +406,15 @@ h2,h3{margin-top:6px;color:#fff}
  
   <section id="radio" class="panel hidden">
     <h2>📻 Predator Online Rádió</h2>
-    <p class="muted">Válassz állomást, majd nyomd meg a lejátszás gombot. A rádió külön menüpontban van, nem a taglistában.</p>
+    <p class="muted">A rádió külön menüpontban van, nem a taglistában. Az alábbi beépített lejátszóban a teljes rádiólistából választhatsz; a második lejátszóban a kiemelt adók is elérhetők.</p>
+    <div class="radio-catalog-box">
+      <h3>📻 Teljes rádióállomás-lista</h3>
+      <p class="muted small">Válassz rádióállomást és csatornát a lejátszóban, majd indítsd el a lejátszást.</p>
+      <iframe id="predatorRadioCatalog" title="Teljes online rádióállomás-lista és lejátszó" src="https://onlinestream.live/embed.cgi?id=2497&ch=1&volume=70&autoplay=0&channelselect=1&stationselect=1" loading="lazy" allow="autoplay; encrypted-media" referrerpolicy="strict-origin-when-cross-origin"></iframe>
+      <p class="muted small">Ha a beágyazott lejátszó nem töltődik be, <a href="https://onlinestream.live/embedcode.cgi" target="_blank" rel="noopener noreferrer">nyisd meg a teljes rádiólistát külön</a>.</p>
+    </div>
     <div id="predatorRadioPlayer">
+      <h3>⭐ Gyors választás – kedvelt állomások</h3>
       <label for="predatorRadioSelect">Rádióállomás</label>
       <select id="predatorRadioSelect">
         <option value="https://icast.connectmedia.hu/5001/live.mp3" data-home="https://myonlineradio.hu/retro-radio">Retro Rádió</option>
