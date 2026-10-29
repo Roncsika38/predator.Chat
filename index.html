@@ -573,6 +573,7 @@ const $ = id => document.getElementById(id);
 let currentUser=null,currentRoom=null,roomList=[],messageChannel=null,recoveryMode=false,privateRecipientId='',onlinePresenceChannel=null,onlineUserIds=new Set(),isPredatorAdmin=false,isPredatorOwner=false;
 const profileCache=new Map();
 const predatorRoleCache=new Map();
+const vipUserIds=new Set();
 async function getPredatorRole(userId){
   const id=String(userId||'');
   if(!id)return 'member';
@@ -775,6 +776,9 @@ async function setVipForUsername(active){
     if(error)throw error;
     out.textContent=active?'Sikeresen ingyen VIP-et adtál ennek a tagnak: '+username+'.':'A VIP-jogosultságot visszavontad ennél a tagnál: '+username+'.';
     $('vipTargetUsername').value='';
+    await loadVipMemberships();
+    if(currentRoom) await loadMessages();
+    await renderOnlineMembers();
   }catch(err){
     out.textContent='Nem sikerült: '+(err?.message||'Ismeretlen hiba')+'. Ellenőrizd, hogy a VIP-admin SQL lefutott-e.';
   }finally{buttons.forEach(b=>b.disabled=false);}
@@ -814,11 +818,13 @@ async function loadRooms(){
 }
 function selectRoom(room){currentRoom=room;const name=room.name||room.title||room.slug||'Szoba';$('roomTitle').textContent=name;document.querySelectorAll('#rooms button').forEach(b=>b.classList.toggle('active',b.textContent==='💬 '+name));if(messageChannel){db.removeChannel(messageChannel);messageChannel=null}loadMessages();messageChannel=db.channel('room-'+room.id).on('postgres_changes',{event:'INSERT',schema:'public',table:'messages',filter:'room_id=eq.'+room.id},payload=>renderMessage(payload.new)).subscribe()}
 async function loadProfileCache(){if(!currentUser)return;const {data,error}=await db.from('profiles').select('id,display_name,avatar_url').limit(500);if(error){console.warn('Profilképek betöltése:',error.message);return}(data||[]).forEach(p=>profileCache.set(String(p.id),p));const mine=profileCache.get(String(currentUser.id));if(mine?.avatar_url)$('avatarPreview').src=mine.avatar_url;else $('avatarPreview').src=DEFAULT_AVATAR}
+async function loadVipMemberships(){vipUserIds.clear();if(!currentUser)return;const {data,error}=await db.from('vip_memberships').select('user_id').eq('active',true).limit(1000);if(error){console.warn('VIP-jelvények nem tölthetők be:',error.message);return}(data||[]).forEach(row=>vipUserIds.add(String(row.user_id)));}
 async function renderMessage(m){if(!m||String(m.room_id)!==String(currentRoom?.id))return;if($('messages').querySelector('[data-id="'+CSS.escape(String(m.id))+'"]'))return;const profile=profileCache.get(String(m.sender_id))||{};const item=document.createElement('div');item.className='msg';item.dataset.id=String(m.id);const avatar=document.createElement('img');avatar.className='msg-avatar';avatar.alt='Profilkép';avatar.src=profile.avatar_url||DEFAULT_AVATAR;const content=document.createElement('div');content.className='msg-content';const head=document.createElement('div');head.className='msg-head';const name=document.createElement('b');
 name.textContent = profile.display_name ||
   (String(m.sender_id) === String(currentUser?.id) ? 'Te' : 'Tag');
 const senderRole=String(m.sender_id)===OWNER_USER_ID?'owner':await getPredatorRole(m.sender_id);
 appendPoliceBadge(name,senderRole);
+if(vipUserIds.has(String(m.sender_id))){const vipBadge=document.createElement('span');vipBadge.textContent=' 👑 VIP';vipBadge.className='vip-badge';vipBadge.title='VIP-tag';vipBadge.style.cssText='color:#ffd45a;font-weight:800;font-size:12px;margin-left:4px';name.append(vipBadge);}
                               const time=document.createElement('span');time.className='time';time.textContent=m.created_at?new Date(m.created_at).toLocaleString('hu-HU'):'';const body=document.createElement('div');body.className='message-body';const match=String(m.body||'').match(/^\[\[PREDATOR_IMAGE:(.+?)\]\](?: (.*))?$/);if(match){const {data,error}=await db.storage.from('chat-images').createSignedUrl(match[1].trim().replace(/^\/+/,'').replace(/^chat-images\//,''),3600);if(error){body.textContent='A kép nem tölthető be: '+error.message}else{if(match[2])body.append(document.createTextNode(match[2]));const img=document.createElement('img');img.className='chat-image';img.alt='Elküldött kép';img.src=data.signedUrl;img.loading='lazy';body.append(img)}}else{body.textContent=m.body||''}head.append(name,time);content.append(head,body);item.append(avatar,content);$('messages').append(item);$('messages').scrollTop=$('messages').scrollHeight}
 async function loadMessages(){$('messages').replaceChildren();if(!currentRoom)return;const {data,error}=await db.from('messages').select('id,sender_id,room_id,body,created_at').eq('room_id',currentRoom.id).is('recipient_id',null).order('created_at',{ascending:true}).limit(100);if(error){chatStatus('Nem tölthetők be az üzenetek: '+error.message);return}const ids=[...new Set((data||[]).map(m=>String(m.sender_id)))].filter(id=>!profileCache.has(id));if(ids.length){const {data:profiles}=await db.from('profiles').select('id,display_name,avatar_url').in('id',ids);(profiles||[]).forEach(p=>profileCache.set(String(p.id),p))}(data||[]).forEach(renderMessage);chatStatus('')}
 $('chooseChatImage').addEventListener('click',()=>$('chatImageFile').click());
@@ -960,10 +966,15 @@ async function renderOnlineMembers(){
   sideList.replaceChildren();
   const ids=new Set(onlineUserIds);
   if(currentUser)ids.add(String(currentUser.id));
+  const shownNames=new Set();
   let count=0;
   for(const id of ids){
     const p=profileCache.get(String(id));
     if(!p)continue;
+    const displayName=String(p.display_name||'Tag').trim();
+    const nameKey=displayName.toLocaleLowerCase('hu-HU');
+    if(shownNames.has(nameKey))continue;
+    shownNames.add(nameKey);
     const row=document.createElement('div');
     row.className='member-item';
     const img=document.createElement('img');
@@ -971,7 +982,8 @@ async function renderOnlineMembers(){
     img.src=p.avatar_url||DEFAULT_AVATAR;
     const name=document.createElement('div');
     name.className='member-name';
-    name.textContent=p.display_name||'Tag';
+    name.textContent=displayName;
+    if(vipUserIds.has(String(id))){const vipBadge=document.createElement('span');vipBadge.textContent=' 👑 VIP';vipBadge.title='VIP-tag';vipBadge.style.cssText='color:#ffd45a;font-weight:800;font-size:12px';name.append(vipBadge);}
     const role=String(id)===OWNER_USER_ID?'owner':await getPredatorRole(id);
     appendPoliceBadge(name,role);
     name.classList.add('clickable-name'); name.title='Kattints a tagra'; name.addEventListener('click',()=>openMemberActions(p));
@@ -1271,6 +1283,7 @@ $('onlineMembersStatus').textContent='Nincs online tag';
   const {error:ownProfileError}=await db.from('profiles').upsert({id:currentUser.id,email:currentUser.email,display_name:currentUser.user_metadata?.username||currentUser.user_metadata?.display_name||oldProfile.display_name||currentUser.email?.split('@')[0]||'Tag',avatar_url:oldProfile.avatar_url||null},{onConflict:'id'});
   if(ownProfileError)console.warn('Saját profil létrehozása nem sikerült:',ownProfileError.message);
   await loadProfileCache();
+  await loadVipMemberships();
 await checkAdmin();
 await loadRooms();
 await loadMembers();
