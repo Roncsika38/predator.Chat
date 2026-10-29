@@ -1610,6 +1610,24 @@ function openMemberActions(profile){
   $('moderationTools').classList.toggle('hidden',!isPredatorAdmin||String(profile.id)===String(currentUser.id)||String(profile.id)===OWNER_USER_ID);
   $('moderationStatus').textContent='';$('memberActionBackdrop').style.display='flex';
 }
+function playModerationSound(){
+  try{
+    const AudioCtx=window.AudioContext||window.webkitAudioContext;
+    if(!AudioCtx)return;
+    const ctx=new AudioCtx();
+    const now=ctx.currentTime;
+    [880,660].forEach((freq,i)=>{
+      const osc=ctx.createOscillator(),gain=ctx.createGain();
+      osc.type='sine';osc.frequency.value=freq;
+      gain.gain.setValueAtTime(0.0001,now+i*0.13);
+      gain.gain.exponentialRampToValueAtTime(0.16,now+i*0.13+0.02);
+      gain.gain.exponentialRampToValueAtTime(0.0001,now+i*0.13+0.11);
+      osc.connect(gain);gain.connect(ctx.destination);
+      osc.start(now+i*0.13);osc.stop(now+i*0.13+0.12);
+    });
+    setTimeout(()=>ctx.close().catch(()=>{}),500);
+  }catch(_){}
+}
 async function moderateMember(action){
   if(!currentUser||!isPredatorAdmin||!activeMemberProfile)return;
   const labels={kick:'kidobás',10:'10 perces tiltás',30:'30 perces tiltás',60:'1 órás tiltás',perm:'végleges tiltás',unban:'tiltás feloldása'};
@@ -1618,7 +1636,25 @@ async function moderateMember(action){
   const duration=action==='perm'?-1:action==='unban'?0:action==='kick'?0:Number(action);
   const {data,error}=await db.rpc('moderate_predator_user',{p_user_id:activeMemberProfile.id,p_action:action,p_duration_minutes:duration});
   if(error){$('moderationStatus').textContent='Nem sikerült moderálni: '+error.message+'\nA Supabase SQL Editorban futtatni kell a mellékelt moderálási SQL-t.';return}
+  const targetName=activeMemberProfile.display_name||activeMemberProfile.username||'Tag';
   $('moderationStatus').textContent=data?.message||('Sikeres művelet: '+labels[action]+'.');
+  if(action==='kick'||action==='10'||action==='30'||action==='60'||action==='perm'){
+    playModerationSound();
+    if(currentRoom){
+      const durationText=action==='kick'?'kidobva':action==='perm'?'véglegesen kitiltva':action+' percre kitiltva';
+      const systemText='📢 RENDSZER: '+targetName+' '+durationText+' lett az adminisztrátor által.';
+      const {error:postError}=await db.from('messages').insert({
+        sender_id:currentUser.id,
+        room_id:currentRoom.id,
+        body:systemText
+      });
+      if(postError){
+        $('moderationStatus').textContent+=' A rendszerüzenet nem került be a chatbe: '+postError.message;
+      }
+    }else{
+      $('moderationStatus').textContent+=' Válassz chat-szobát, hogy a rendszerüzenet megjelenhessen.';
+    }
+  }
 }
 
 
