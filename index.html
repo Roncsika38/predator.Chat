@@ -323,17 +323,16 @@ h2,h3{margin-top:6px;color:#fff}
 
 
 
-<style id="predator-online-radio-style">
-#predatorRadio{margin:0 0 14px;padding:0;min-width:0}
-#predatorRadio h3{margin:3px 0 8px;color:#ff4055}
-#predatorRadio label{display:block;margin:8px 0 5px}
-#predatorRadio select{width:100%;margin-bottom:9px;font-size:14px}
-.radio-frame-wrap{width:100%;height:300px;overflow:hidden;border:1px solid #792033;border-radius:10px;background:#09090c}
-#predatorRadioFrame{display:block;width:100%;height:100%;border:0;background:#09090c}
-#predatorRadioOpen{display:inline-block;color:#ff6475;font-size:13px;overflow-wrap:anywhere;margin:4px 0 10px}
-#predatorRadioToggle{display:block;width:100%;padding:9px;font-size:13px;background:linear-gradient(135deg,#25252d,#111116);border-color:#5a2630;box-shadow:none}
-#predatorRadio.is-collapsed .radio-frame-wrap,#predatorRadio.is-collapsed #predatorRadioOpen,#predatorRadio.is-collapsed>p,#predatorRadio.is-collapsed label,#predatorRadio.is-collapsed select{display:none}
-@media(max-width:620px){.radio-frame-wrap{height:300px}#predatorRadio{margin-bottom:12px}}
+
+<style id="predator-radio-tab-style">
+#radio.panel{min-height:300px}
+#predatorRadioPlayer{max-width:760px;margin:18px auto;padding:18px;background:linear-gradient(145deg,#17080d,#08080b);border:1px solid #8d1b30;border-radius:16px}
+#predatorRadioPlayer label{display:block;margin:12px 0 6px;font-weight:bold}
+#predatorRadioSelect{width:100%;padding:12px}
+#predatorRadioAudio{display:block;width:100%;margin:16px 0 10px}
+#predatorRadioStatus{min-height:22px;color:#ff9aa8;font-size:13px}
+#predatorRadioOpen{color:#ff6475}
+@media(max-width:620px){#predatorRadioPlayer{padding:12px;margin:10px 0}}
 </style>
 
 </head>
@@ -374,7 +373,7 @@ h2,h3{margin-top:6px;color:#fff}
 </section>
 <section id="app" class="hidden">
   <nav class="tabs">
-  <button data-tab="chat" class="active">🏠 Főoldal / Chat</button><button data-tab="music">🎵 Zene</button><button data-tab="chat">▣ Szobák</button><button data-tab="members">👥 Felhasználók</button><button data-tab="private">✉ Privát üzenetek</button><button data-tab="profile">👤 Profil</button><button data-tab="admin" id="adminTab" class="hidden">♛ Adminpanel</button>
+  <button data-tab="chat" class="active">🏠 Főoldal / Chat</button><button data-tab="music">🎵 Zene</button><button data-tab="radio">📻 Rádió</button><button data-tab="chat">▣ Szobák</button><button data-tab="members">👥 Felhasználók</button><button data-tab="private">✉ Privát üzenetek</button><button data-tab="profile">👤 Profil</button><button data-tab="admin" id="adminTab" class="hidden">♛ Adminpanel</button>
   </nav><section id="music" class="panel hidden">
   <h2>🎵 Predator Zene</h2>
   <p>Tölts fel zenét, vagy hallgasd meg a tagok által feltöltött zenéket!</p>
@@ -400,7 +399,29 @@ h2,h3{margin-top:6px;color:#fff}
   <div id="musicList" class="member-list"></div>
 </section>
   
- <section id="chat" class="layout predator-layout">
+ 
+  <section id="radio" class="panel hidden">
+    <h2>📻 Predator Online Rádió</h2>
+    <p class="muted">Válassz állomást, majd nyomd meg a lejátszás gombot. A rádió külön menüpontban van, nem a taglistában.</p>
+    <div id="predatorRadioPlayer">
+      <label for="predatorRadioSelect">Rádióállomás</label>
+      <select id="predatorRadioSelect">
+        <option value="https://icast.connectmedia.hu/5001/live.mp3" data-home="https://myonlineradio.hu/retro-radio">Retro Rádió</option>
+        <option value="https://icast.connectmedia.hu/5201/live.mp3" data-home="https://myonlineradio.hu/radio-1">Rádió 1</option>
+        <option value="https://mr-stream.connectmedia.hu/4738/mr2.mp3" data-home="https://myonlineradio.hu/petofi-radio">Petőfi Rádió</option>
+        <option value="https://icast.connectmedia.hu/4736/mr1.mp3" data-home="https://myonlineradio.hu/kossuth-radio">Kossuth Rádió</option>
+        <option value="https://slagerfm.netregator.hu:7813/slagerfm128.mp3" data-home="https://myonlineradio.hu/slager-fm">Sláger FM</option>
+        <option value="https://radio.musorok.org/listen/jazzy/jazzy.mp3" data-home="https://myonlineradio.hu/jazzy-radio">Jazzy Rádió</option>
+        <option value="https://rockerradio.online/live.mp3" data-home="https://myonlineradio.hu/rocker-radio">Rocker Rádió</option>
+      </select>
+      <audio id="predatorRadioAudio" controls preload="none" playsinline>
+        A böngésződ nem támogatja a beépített audiolejátszót.
+      </audio>
+      <p id="predatorRadioStatus" role="status">Válassz rádiót, majd kattints a lejátszásra.</p>
+      <a id="predatorRadioOpen" href="https://myonlineradio.hu/retro-radio" target="_blank" rel="noopener noreferrer">Állomás megnyitása a MyOnlineRadio.hu-n ↗</a>
+    </div>
+  </section>
+<section id="chat" class="layout predator-layout">
   <aside class="panel">
     <h3>🔴 Szobák</h3>
     <div id="rooms"></div>
@@ -419,27 +440,6 @@ h2,h3{margin-top:6px;color:#fff}
   </section>
 
   <aside class="panel predator-members">
-    <section id="predatorRadio" aria-label="Online rádió">
-      <h3>📻 Online rádió</h3>
-      <p class="muted small">Válassz rádiót, és hallgasd a chat mellett.</p>
-      <label for="predatorRadioSelect" class="small">Rádió kiválasztása</label>
-      <select id="predatorRadioSelect">
-        <option value="https://myonlineradio.hu/retro-radio">Retro Rádió</option>
-        <option value="https://myonlineradio.hu/radio-1">Rádió 1</option>
-        <option value="https://myonlineradio.hu/petofi-radio">Petőfi Rádió</option>
-        <option value="https://myonlineradio.hu/kossuth-radio">Kossuth Rádió</option>
-        <option value="https://myonlineradio.hu/slager-fm">Sláger FM</option>
-        <option value="https://myonlineradio.hu/jazzy-radio">Jazzy Rádió</option>
-        <option value="https://myonlineradio.hu/rocker-radio">Rocker Rádió</option>
-      </select>
-      <div class="radio-frame-wrap">
-        <iframe id="predatorRadioFrame" title="MyOnlineRadio lejátszó" src="https://myonlineradio.hu/retro-radio" loading="lazy" allow="autoplay; encrypted-media" referrerpolicy="strict-origin-when-cross-origin"></iframe>
-      </div>
-      <p class="muted small">Ha a rádió nem jelenik meg beágyazva, nyisd meg külön.</p>
-      <a id="predatorRadioOpen" href="https://myonlineradio.hu/retro-radio" target="_blank" rel="noopener noreferrer">Megnyitás a MyOnlineRadio.hu-n ↗</a>
-      <button id="predatorRadioToggle" type="button" aria-expanded="true">Rádiópanel elrejtése</button>
-    </section>
-    <hr class="neon-divider">
     <h3>🟢 Tagok</h3>
     <p id="onlineMembersStatus" class="muted small">Tagok betöltése...</p>
     <div id="onlineMemberList" class="member-list"></div>
@@ -670,7 +670,7 @@ $('forgotPassword').addEventListener('click', async () => {
 });
 $('newPasswordForm').addEventListener('submit',async e=>{e.preventDefault();const p1=$('newPassword').value,p2=$('newPasswordAgain').value;if(p1.length<6){status('A jelszónak legalább 6 karakteresnek kell lennie.');return}if(p1!==p2){status('A két jelszó nem egyezik.');return}status('Jelszó mentése…');const {error}=await db.auth.updateUser({password:p1});if(error){status('Nem sikerült megváltoztatni a jelszót: '+error.message);return}status('Sikerült megváltoztatni a jelszót.');$('newPasswordForm').reset();showRecovery(false);await db.auth.signOut();history.replaceState(null,'',location.pathname)});
 $('logout').addEventListener('click',async()=>{await db.auth.signOut()});
-document.querySelectorAll('[data-tab]').forEach(button=>{button.addEventListener('click',()=>{document.querySelectorAll('[data-tab]').forEach(b=>b.classList.toggle('active',b===button));['chat','music','members','private','profile','admin'].forEach(id=>$(id).classList.add('hidden'));$(button.dataset.tab).classList.remove('hidden');if(button.dataset.tab==='members')loadMembers();if(button.dataset.tab==='private')loadPrivateMessages()})});
+document.querySelectorAll('[data-tab]').forEach(button=>{button.addEventListener('click',()=>{document.querySelectorAll('[data-tab]').forEach(b=>b.classList.toggle('active',b===button));['chat','music','radio','members','private','profile','admin'].forEach(id=>$(id).classList.add('hidden'));$(button.dataset.tab).classList.remove('hidden');if(button.dataset.tab==='members')loadMembers();if(button.dataset.tab==='private')loadPrivateMessages()})});
 const OWNER_USER_ID='aef906e3-f704-4a28-b3c2-6a1373c5c4f5';
 async function checkAdmin(){
   const {data,error}=await db.from('chat_roles').select('role').eq('user_id',currentUser.id).maybeSingle();
@@ -1502,5 +1502,17 @@ async function moderateMember(action){
 })();
 </script>
 
+<script>
+(function(){
+  const select=$('predatorRadioSelect'),audio=$('predatorRadioAudio'),status=$('predatorRadioStatus'),openLink=$('predatorRadioOpen');
+  if(!select||!audio||!status||!openLink)return;
+  function chooseStation(){const option=select.options[select.selectedIndex];audio.pause();audio.src=select.value;audio.load();openLink.href=option?.dataset.home||'https://myonlineradio.hu/';status.textContent='Kiválasztva: '+(option?.textContent||'rádió')+'. Nyomd meg a lejátszás gombot.';}
+  select.addEventListener('change',chooseStation);
+  audio.addEventListener('playing',()=>status.textContent='A rádió szól: '+select.options[select.selectedIndex].textContent+'.');
+  audio.addEventListener('waiting',()=>status.textContent='Kapcsolódás a rádióhoz…');
+  audio.addEventListener('error',()=>status.textContent='Ez az adás most nem érhető el. Válassz másik állomást, vagy nyisd meg a MyOnlineRadio.hu oldalon.');
+  chooseStation();
+})();
+</script>
 </body>
 </html>
