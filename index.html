@@ -1,3 +1,4 @@
+```
 <!DOCTYPE html>
 <html lang="hu">
 <head>
@@ -1270,15 +1271,17 @@ $('onlineMembersStatus').textContent='Nincs online tag';
   if(moderationPollTimer){clearInterval(moderationPollTimer);moderationPollTimer=null;}
   moderationExitInProgress=false;
   if(loggedIn){
-    const {data:moderation,error:moderationError}=await db.from('predator_moderation').select('action,banned_until,reason').eq('user_id',currentUser.id).maybeSingle();
+    const {data:moderation,error:moderationError}=await db.from('predator_moderation').select('action,banned_until,reason,moderator_name,updated_at').eq('user_id',currentUser.id).maybeSingle();
     if(moderationError){
       console.warn('Moderálási állapot ellenőrzése sikertelen:',moderationError.message);
     } else if(moderation && moderation.banned_until && (moderation.banned_until==='infinity' || new Date(moderation.banned_until)>new Date())){
-      const actionText=moderation.action==='kick'?'kidobott az adminisztrátor':moderation.banned_until==='infinity'?'véglegesen kitiltottak':'ideiglenesen kitiltottak';
-      const untilText=moderation.banned_until==='infinity'?'A tiltás végleges.':'A tiltás lejárata: '+new Date(moderation.banned_until).toLocaleString('hu-HU')+'.';
+      const actionText=moderation.action==='kick'?'kidobtak a chatből':moderation.banned_until==='infinity'?'véglegesen kitiltottak':'ideiglenesen kitiltottak';
+      const moderatorText=' Kitiltotta: '+(moderation.moderator_name||'adminisztrátor / moderátor')+'.';
+      const durationText=moderation.banned_until==='infinity'?' Időtartam: végleges tiltás.':moderation.action==='kick'?' Időtartam: kidobás (1 percig nem lehet visszalépni).':' Időtartam: '+Math.max(1,Math.ceil((new Date(moderation.banned_until)-new Date(moderation.updated_at||Date.now()))/60000))+' perc.';
+      const untilText=moderation.banned_until==='infinity'?' A tiltás végleges.':' Lejárat: '+new Date(moderation.banned_until).toLocaleString('hu-HU')+'.';
       const reasonText=moderation.reason?' Indok: '+moderation.reason+'.':'';
       await db.auth.signOut(); currentUser=null; $('auth').classList.remove('hidden'); $('app').classList.add('hidden');
-      status('A Predator Chatből '+actionText+'. '+untilText+reasonText+' Ha szerinted tévedés történt, keresd meg az adminisztrátort.');
+      status('A Predator Chatből '+actionText+'.'+moderatorText+durationText+untilText+reasonText+' Ha szerinted tévedés történt, keresd meg az adminisztrátort.');
       return;
     }
   }
@@ -1295,13 +1298,15 @@ $('onlineMembersStatus').textContent='Nincs online tag';
   moderationPollTimer=setInterval(async()=>{
     if(!currentUser||moderationExitInProgress)return;
     const checkedUserId=currentUser.id;
-    const {data:mod,error:modError}=await db.from('predator_moderation').select('action,banned_until,reason').eq('user_id',checkedUserId).maybeSingle();
+    const {data:mod,error:modError}=await db.from('predator_moderation').select('action,banned_until,reason,moderator_name,updated_at').eq('user_id',checkedUserId).maybeSingle();
     if(modError||!mod||!mod.banned_until)return;
     const active=mod.banned_until==='infinity'||new Date(mod.banned_until)>new Date();
     if(!active||String(currentUser?.id)!==String(checkedUserId))return;
     moderationExitInProgress=true;
-    const actionText=mod.action==='kick'?'kidobott az adminisztrátor':mod.banned_until==='infinity'?'véglegesen kitiltottak':'ideiglenesen kitiltottak';
-    const untilText=mod.banned_until==='infinity'?'A tiltás végleges.':'A tiltás lejárata: '+new Date(mod.banned_until).toLocaleString('hu-HU')+'.';
+    const actionText=mod.action==='kick'?'kidobtak a chatből':mod.banned_until==='infinity'?'véglegesen kitiltottak':'ideiglenesen kitiltottak';
+    const moderatorText=' Kitiltotta: '+(mod.moderator_name||'adminisztrátor / moderátor')+'.';
+    const durationText=mod.banned_until==='infinity'?' Időtartam: végleges tiltás.':mod.action==='kick'?' Időtartam: kidobás (1 percig nem lehet visszalépni).':' Időtartam: '+Math.max(1,Math.ceil((new Date(mod.banned_until)-new Date(mod.updated_at||Date.now()))/60000))+' perc.';
+    const untilText=mod.banned_until==='infinity'?' A tiltás végleges.':' Lejárat: '+new Date(mod.banned_until).toLocaleString('hu-HU')+'.';
     const reasonText=mod.reason?' Indok: '+mod.reason+'.':'';
     if(messageChannel){db.removeChannel(messageChannel);messageChannel=null;}
     if(onlinePresenceChannel){db.removeChannel(onlinePresenceChannel);onlinePresenceChannel=null;}
@@ -1739,3 +1744,4 @@ async function moderateMember(action){
 
 </body>
 </html>
+```
