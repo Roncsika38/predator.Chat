@@ -1,4 +1,3 @@
-```
 <!DOCTYPE html>
 <html lang="hu">
 <head>
@@ -393,7 +392,7 @@ h2,h3{margin-top:6px;color:#fff}
 </section>
 <section id="app" class="hidden">
   <nav class="tabs">
-  <button data-tab="chat" class="active">🏠 Főoldal / Chat</button><button data-tab="music">🎵 Zene</button><button data-tab="radio">📻 Rádió</button><button data-tab="games">🎮 Játékok</button><button data-tab="chat">▣ Szobák</button><button data-tab="members">👥 Felhasználók</button><button data-tab="private">✉ Privát üzenetek</button><button data-tab="profile">👤 Profil</button><button data-tab="admin" id="adminTab" class="hidden">♛ Adminpanel</button>
+  <button data-tab="chat" class="active">🏠 Főoldal / Chat</button><button data-tab="music">🎵 Zene</button><button data-tab="radio">📻 Rádió</button><button data-tab="games">🎮 Játékok</button><button data-tab="chat">▣ Szobák</button><button data-tab="members">👥 Felhasználók</button><button data-tab="private">✉ Privát üzenetek</button><button data-tab="profile">👤 Profil</button><button data-tab="vip">🛒 VIP Bolt</button><button data-tab="admin" id="adminTab" class="hidden">♛ Adminpanel</button>
   </nav>
 <section id="games" class="panel hidden">
   <h2>🎮 Predator Játékok</h2>
@@ -523,6 +522,14 @@ h2,h3{margin-top:6px;color:#fff}
   <button type="button" id="sharedBgReset">Alap háttér visszaállítása</button>
   <p id="sharedBgStatus" role="status"></p>
 </section>                                                                                                                                                                                                                  <button type="button" id="uploadBackground">Háttérkép beállítása</button><button type="button" id="clearBackground">Háttérkép törlése</button><p id="backgroundStatus" class="muted small"></p>
+  </section>
+  <section id="vip" class="panel hidden">
+    <h2>🛒 Predator VIP Bolt</h2>
+    <p class="muted">Vásárolj színes nevet, VIP-jelvényt vagy profilkeretet a chatérméidből.</p>
+    <p><strong>Érmeegyenleg:</strong> <span id="vipCoinBalance">Betöltés…</span></p>
+    <p id="vipShopStatus" role="status" class="muted small"></p>
+    <div id="vipShopItems" class="member-list"></div>
+    <p class="muted small">Az érmefeltöltés és a valódi pénzes fizetés külön beállítást igényel. Ne adj meg bankkártyaadatot ezen az oldalon.</p>
   </section>
   <section id="admin" class="panel hidden">
     <h2>Adminpanel</h2><p id="adminStatus" role="status">Adminjog ellenőrzése…</p>
@@ -724,7 +731,7 @@ $('forgotPassword').addEventListener('click', async () => {
 });
 $('newPasswordForm').addEventListener('submit',async e=>{e.preventDefault();const p1=$('newPassword').value,p2=$('newPasswordAgain').value;if(p1.length<6){status('A jelszónak legalább 6 karakteresnek kell lennie.');return}if(p1!==p2){status('A két jelszó nem egyezik.');return}status('Jelszó mentése…');const {error}=await db.auth.updateUser({password:p1});if(error){status('Nem sikerült megváltoztatni a jelszót: '+error.message);return}status('Sikerült megváltoztatni a jelszót.');$('newPasswordForm').reset();showRecovery(false);await db.auth.signOut();history.replaceState(null,'',location.pathname)});
 $('logout').addEventListener('click',async()=>{await db.auth.signOut()});
-document.querySelectorAll('[data-tab]').forEach(button=>{button.addEventListener('click',()=>{document.querySelectorAll('[data-tab]').forEach(b=>b.classList.toggle('active',b===button));['chat','music','radio','games','members','private','profile','admin'].forEach(id=>$(id).classList.add('hidden'));$(button.dataset.tab).classList.remove('hidden');if(button.dataset.tab==='members')loadMembers();if(button.dataset.tab==='private')loadPrivateMessages()})});
+document.querySelectorAll('[data-tab]').forEach(button=>{button.addEventListener('click',()=>{document.querySelectorAll('[data-tab]').forEach(b=>b.classList.toggle('active',b===button));['chat','music','radio','games','members','private','profile','vip','admin'].forEach(id=>$(id).classList.add('hidden'));$(button.dataset.tab).classList.remove('hidden');if(button.dataset.tab==='members')loadMembers();if(button.dataset.tab==='private')loadPrivateMessages();if(button.dataset.tab==='vip')loadVipShop()})});
 const OWNER_USER_ID='aef906e3-f704-4a28-b3c2-6a1373c5c4f5';
 async function checkAdmin(){
   const {data,error}=await db.from('chat_roles').select('role').eq('user_id',currentUser.id).maybeSingle();
@@ -1237,6 +1244,40 @@ await loadRooms();
 await loadMembers();
 startOnlinePresence();
 }
+
+async function loadVipShop(){
+  const balance=$('vipCoinBalance'),itemsBox=$('vipShopItems'),shopStatus=$('vipShopStatus');
+  if(!currentUser){balance.textContent='Bejelentkezés szükséges';itemsBox.replaceChildren();return}
+  balance.textContent='Betöltés…';shopStatus.textContent='';itemsBox.replaceChildren();
+  const [{data:wallet,error:walletError},{data:items,error:itemsError},{data:purchases,error:purchasesError}]=await Promise.all([
+    db.from('vip_wallets').select('coins').eq('user_id',currentUser.id).maybeSingle(),
+    db.from('vip_items').select('id,name,price_coins').eq('active',true).order('price_coins'),
+    db.from('vip_purchases').select('item_id').eq('user_id',currentUser.id)
+  ]);
+  if(walletError){balance.textContent='Nem elérhető';shopStatus.textContent='Pénztárca-hiba: '+walletError.message;return}
+  balance.textContent=String(wallet?.coins ?? 0)+' érme';
+  if(itemsError){shopStatus.textContent='A termékek nem tölthetők be: '+itemsError.message;return}
+  if(purchasesError){shopStatus.textContent='A vásárlások nem tölthetők be: '+purchasesError.message;return}
+  const owned=new Set((purchases||[]).map(p=>p.item_id));
+  if(!items?.length){shopStatus.textContent='Jelenleg nincs elérhető VIP-termék.';return}
+  items.forEach(item=>{
+    const card=document.createElement('div');card.className='panel';card.style.margin='8px 0';
+    const title=document.createElement('h3');title.textContent=item.name;
+    const price=document.createElement('p');price.textContent='Ár: '+item.price_coins+' érme';
+    const button=document.createElement('button');button.type='button';
+    button.textContent=owned.has(item.id)?'Már megvásároltad':'Megvásárlás';
+    button.disabled=owned.has(item.id);
+    button.addEventListener('click',async()=>{
+      button.disabled=true;shopStatus.textContent='Vásárlás feldolgozása…';
+      const {data,error}=await db.rpc('buy_vip_item',{p_item_id:item.id});
+      if(error){shopStatus.textContent='Nem sikerült a vásárlás: '+error.message;button.disabled=false;return}
+      shopStatus.textContent='Sikeres vásárlás!';
+      await loadVipShop();
+    });
+    card.append(title,price,button);itemsBox.append(card);
+  });
+}
+
 db.auth.onAuthStateChange((event,session)=>{if(event==='PASSWORD_RECOVERY'){showRecovery(true);return}if(event==='SIGNED_OUT')recoveryMode=false;setTimeout(()=>showSession(session),0)});
 (async()=>{if(!explainUrlError()){const {data,error}=await db.auth.getSession();if(error)status('Munkamenet-hiba: '+error.message);if(data?.session)await showSession(data.session)}})();
 
@@ -1591,4 +1632,3 @@ async function moderateMember(action){
 
 </body>
 </html>
-```
