@@ -592,8 +592,8 @@ header {
     <label for="profileCity">Hol laksz? (település vagy megye)</label><input id="profileCity" type="text" maxlength="80" autocomplete="address-level2" placeholder="Például: Szeged">
     <label for="profileGender">Nem</label><select id="profileGender"><option value="">Nem szeretném megadni</option><option value="Nő">Nő</option><option value="Férfi">Férfi</option><option value="Egyéb">Egyéb</option></select>
     <button type="button" id="saveProfileDetails">Adatlap mentése</button><p id="profileDetailsStatus" class="muted small" role="status"></p>
-    <hr><h3>Háttérkép</h3><p class="muted small">A háttérkép ezen a böngészőn lesz elmentve.</p><input id="backgroundFile" type="file" accept="image/png,image/jpeg,image/webp">
-       <section class="panel" id="sharedBackground">
+    <hr><p class="muted small">A közös chat-háttér beállítását kizárólag a tulajdonos kezelheti.</p>
+       <section class="panel hidden" id="sharedBackground">
   <h2>🎨 Közös chat-háttér</h2>
   <p>Minden tagnál megjelenő háttér beállítása.</p>
   <label for="sharedBgColor">Háttérszín</label>
@@ -841,6 +841,7 @@ async function checkAdmin(){
     $('adminTab').classList.toggle('hidden',!isOwner);
     $('roomAdminTools').classList.toggle('hidden',!isOwner);
     $('roleAdminTools').classList.toggle('hidden',!isOwner);$('vipAdminTools').classList.toggle('hidden',!isOwner);
+    $('sharedBackground').classList.toggle('hidden',!isOwner);
     $('adminStatus').textContent='Adminellenőrzési hiba: '+error.message+(isOwner?' A tulajdonosi azonosító egyezik.':'');
     return;
   }
@@ -849,6 +850,7 @@ async function checkAdmin(){
   $('adminTab').classList.toggle('hidden',!isAdmin);
   $('roomAdminTools').classList.toggle('hidden',!isAdmin);
   $('roleAdminTools').classList.toggle('hidden',!isOwner);$('vipAdminTools').classList.toggle('hidden',!isOwner);
+  $('sharedBackground').classList.toggle('hidden',!isOwner);
   $('adminStatus').textContent=isAdmin?(isOwner?'Tulajdonosi fiókkal vagy belépve.':'Adminisztrátori fiókkal vagy belépve.'):'Ehhez a fiókhoz nincs adminjog. A tulajdonosi azonosítót és a chat_roles táblát ellenőrizni kell.';
 }
 async function setVipForUsername(active){
@@ -986,8 +988,8 @@ function applySharedBackground(type,value){
 }
 
 async function saveSharedBackground(type,value){
-  if(!currentUser){
-    $('backgroundStatus').textContent='Előbb jelentkezz be!';
+  if(!currentUser || String(currentUser.id)!=='aef9063e-f704-4a28-b3c2-6a1373c5c4f5'){
+    $('backgroundStatus').textContent='A közös hátteret kizárólag a Predator Chat tulajdonosa állíthatja.';
     return;
   }
 
@@ -1011,7 +1013,8 @@ async function saveSharedBackground(type,value){
 }
 
 $('uploadBackground').addEventListener('click',async()=>{
-  const file=$('backgroundFile').files[0];
+  if(!currentUser || String(currentUser.id)!=='aef9063e-f704-4a28-b3c2-6a1373c5c4f5'){$('backgroundStatus').textContent='Csak a tulajdonos állíthatja a hátteret.';return}
+  const file=$('backgroundFile')?.files[0];
 
   if(!file){
     $('backgroundStatus').textContent='Válassz ki egy képet!';
@@ -1494,8 +1497,8 @@ db.auth.onAuthStateChange((event,session)=>{if(event==='PASSWORD_RECOVERY'){show
   }
 
   async function saveBackground(type, value) {
-    if (!window.currentUser) {
-      status.textContent = 'Előbb jelentkezz be!';
+    if (!window.currentUser || String(window.currentUser.id) !== 'aef9063e-f704-4a28-b3c2-6a1373c5c4f5') {
+      status.textContent = 'A közös hátteret kizárólag a Predator Chat tulajdonosa állíthatja.';
       return;
     }
 
@@ -1531,6 +1534,10 @@ db.auth.onAuthStateChange((event,session)=>{if(event==='PASSWORD_RECOVERY'){show
   });
 
   document.getElementById('sharedBgUpload').addEventListener('click', async () => {
+    if (!window.currentUser || String(window.currentUser.id) !== 'aef9063e-f704-4a28-b3c2-6a1373c5c4f5') {
+      status.textContent = 'A háttérképet kizárólag a tulajdonos állíthatja be.';
+      return;
+    }
     const file = fileInput.files[0];
 
     if (!file) {
