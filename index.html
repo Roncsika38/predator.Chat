@@ -419,6 +419,22 @@ header {
 .private-popup-message.mine { background: rgba(110, 12, 35, 0.24) !important; }
 </style>
 
+
+<meta name="application-name" content="Predator Chat">
+<meta property="og:site_name" content="Predator Chat">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Predator Chat – Magyar online chat">
+<meta name="twitter:description" content="Csatlakozz a Predator Chat magyar közösségéhez!">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  "name": "Predator Chat",
+  "alternateName": "PredatorChat",
+  "url": "https://roncsika38.github.io/predator.Chat/"
+}
+</script>
+
 </head>
 <body>
 <header>
@@ -1726,6 +1742,7 @@ function playModerationSound(){
 async function moderateMember(action){
   if(!currentUser||!isPredatorAdmin||!activeMemberProfile)return;
   const labels={kick:'kidobás',10:'10 perces tiltás',30:'30 perces tiltás',60:'1 órás tiltás',perm:'végleges tiltás',unban:'tiltás feloldása'};
+  if(!confirm('Biztosan végrehajtod: '+labels[action]+' – '+(activeMemberProfile.display_name||'tag')+'?'))return;
   $('moderationStatus').textContent='Moderálás folyamatban…';
   const duration=action==='perm'?-1:action==='unban'?0:action==='kick'?0:Number(action);
   const {data,error}=await db.rpc('moderate_predator_user',{p_user_id:activeMemberProfile.id,p_action:action,p_duration_minutes:duration});
