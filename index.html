@@ -1,3 +1,4 @@
+```
 <!DOCTYPE html>
 <html lang="hu">
 <head>
@@ -1725,7 +1726,6 @@ function playModerationSound(){
 async function moderateMember(action){
   if(!currentUser||!isPredatorAdmin||!activeMemberProfile)return;
   const labels={kick:'kidobás',10:'10 perces tiltás',30:'30 perces tiltás',60:'1 órás tiltás',perm:'végleges tiltás',unban:'tiltás feloldása'};
-  if(!confirm('Biztosan végrehajtod: '+labels[action]+' – '+(activeMemberProfile.display_name||'tag')+'?'))return;
   $('moderationStatus').textContent='Moderálás folyamatban…';
   const duration=action==='perm'?-1:action==='unban'?0:action==='kick'?0:Number(action);
   const {data,error}=await db.rpc('moderate_predator_user',{p_user_id:activeMemberProfile.id,p_action:action,p_duration_minutes:duration});
@@ -1807,3 +1807,4 @@ async function moderateMember(action){
 
 </body>
 </html>
+```
