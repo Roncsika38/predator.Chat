@@ -355,78 +355,67 @@ h2,h3{margin-top:6px;color:#fff}
 </style>
 
 
-<style id="predator-glass-strong">
-/* Erősen áttetsző üveghatás – a meglévő háttérkép is látható marad */
-:root {
-  --glass-panel: rgba(8, 8, 13, .16);
-  --glass-panel-soft: rgba(8, 8, 13, .09);
-  --glass-edge: rgba(255, 48, 75, .48);
+<style id="predator-real-transparent-ui">
+/* Valóban áttetsző felületek: a mögöttes chat-háttér maradjon jól látható. */
+#app, #chat, #chat.layout, #chat.predator-layout,
+#chat .predator-layout, #messages {
+  background: transparent !important;
+  background-image: none !important;
 }
-html, body { min-height: 100%; }
-body {
-  background-color: #09090d;
-  background-attachment: fixed;
-}
-/* Minden fő chatpanel valóban áttetsző */
 .panel,
 #chat.predator-layout > aside,
 #chat.predator-layout > section,
-#chat .predator-members,
 #auth.panel,
-#members.panel, #private.panel, #profile.panel, #vip.panel, #admin.panel,
-#music.panel, #radio.panel, #games.panel {
-  background: var(--glass-panel) !important;
+#members.panel, #private.panel, #profile.panel, #vip.panel,
+#admin.panel, #music.panel, #radio.panel, #games.panel {
+  background: rgba(7, 7, 12, 0.12) !important;
   background-image: none !important;
-  border: 1px solid var(--glass-edge) !important;
-  -webkit-backdrop-filter: blur(22px) saturate(145%) !important;
-  backdrop-filter: blur(22px) saturate(145%) !important;
-  box-shadow: 0 8px 32px rgba(0,0,0,.16), inset 0 1px rgba(255,255,255,.09) !important;
+  border: 1px solid rgba(255, 45, 70, 0.48) !important;
+  box-shadow: 0 5px 20px rgba(0,0,0,0.10) !important;
+  -webkit-backdrop-filter: blur(2px) !important;
+  backdrop-filter: blur(2px) !important;
 }
-/* A középső beszélgetés háttere különösen áttetsző */
 #chat.predator-layout > section {
-  background: rgba(7, 7, 12, .10) !important;
+  background: rgba(7, 7, 12, 0.06) !important;
 }
-/* A szobák, tagok és üzenetek se kapjanak tömör hátteret */
-#rooms button,
-#onlineMemberList .member-item,
-#memberList .member-item,
-.msg,
-#messages,
-.composer,
-.tabs {
-  background: var(--glass-panel-soft) !important;
-  -webkit-backdrop-filter: blur(14px) !important;
-  backdrop-filter: blur(14px) !important;
+#messages, .msg, .member-item, #onlineMemberList .member-item,
+#rooms, #rooms button, .tabs {
+  background: transparent !important;
+  background-image: none !important;
+  box-shadow: none !important;
 }
-#messages { border: 1px solid rgba(255,255,255,.07); }
-.msg { border-bottom: 1px solid rgba(255,55,78,.16) !important; }
-.msg:hover { background: rgba(255,255,255,.07) !important; }
-.composer {
-  background: rgba(5,5,9,.18) !important;
-  border: 1px solid rgba(255,48,75,.45) !important;
+.msg {
+  border-bottom: 1px solid rgba(255, 55, 78, 0.18) !important;
+}
+.msg:hover, #rooms button:hover {
+  background: rgba(255,255,255,0.07) !important;
+}
+#rooms button {
+  border: 1px solid rgba(255, 55, 78, 0.28) !important;
+}
+#rooms button.active, .tabs button.active {
+  background: rgba(205, 15, 42, 0.58) !important;
+}
+.composer, #privatePopupForm, #privatePopupHeader {
+  background: rgba(5, 5, 9, 0.18) !important;
+  background-image: none !important;
+}
+.composer input, input, select, textarea {
+  background: rgba(5, 5, 9, 0.22) !important;
 }
 header {
-  background: rgba(5,5,8,.30) !important;
-  -webkit-backdrop-filter: blur(20px) !important;
-  backdrop-filter: blur(20px) !important;
-}
-input, select, textarea,
-.composer input {
-  background: rgba(5,5,9,.28) !important;
+  background: rgba(5, 5, 8, 0.20) !important;
+  -webkit-backdrop-filter: blur(2px) !important;
+  backdrop-filter: blur(2px) !important;
 }
 #privatePopup, #memberActionCard {
-  background: rgba(8,8,13,.22) !important;
-  -webkit-backdrop-filter: blur(22px) !important;
-  backdrop-filter: blur(22px) !important;
+  background: rgba(8, 8, 13, 0.18) !important;
+  -webkit-backdrop-filter: blur(3px) !important;
+  backdrop-filter: blur(3px) !important;
 }
-#privatePopupMessages { background: rgba(5,5,9,.10) !important; }
-#privatePopup .private-popup-message { background: rgba(30,25,34,.34) !important; }
-#privatePopup .private-popup-message.mine { background: rgba(105,12,34,.30) !important; }
-@media (max-width: 620px) {
-  #chat.predator-layout > section,
-  #chat.predator-layout > aside,
-  .panel { -webkit-backdrop-filter: blur(16px) !important; backdrop-filter: blur(16px) !important; }
-}
+#privatePopupMessages { background: transparent !important; }
+.private-popup-message { background: rgba(35, 25, 32, 0.22) !important; }
+.private-popup-message.mine { background: rgba(110, 12, 35, 0.24) !important; }
 </style>
 
 </head>
@@ -1818,4 +1807,3 @@ async function moderateMember(action){
 
 </body>
 </html>
-```
