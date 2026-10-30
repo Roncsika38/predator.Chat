@@ -585,7 +585,14 @@ header {
     <h2>Profilom</h2><img id="avatarPreview" class="avatar" src="https://placehold.co/120x120?text=Profil" alt="Profilkép">
     <label for="displayName">Megjelenő név</label><input id="displayName" maxlength="32" placeholder="A chatben látható neved"><button type="button" id="saveDisplayName">Név mentése</button><p id="displayNameStatus" class="muted small"></p>
     <label for="avatarFile">Profilkép kiválasztása</label><input id="avatarFile" type="file" accept="image/png,image/jpeg,image/webp,image/gif">
-    <button type="button" id="uploadAvatar">Profilkép feltöltése</button><p id="avatarStatus"></p><p id="profileEmail"></p><hr><h3>Háttérkép</h3><p class="muted small">A háttérkép ezen a böngészőn lesz elmentve.</p><input id="backgroundFile" type="file" accept="image/png,image/jpeg,image/webp">
+    <button type="button" id="uploadAvatar">Profilkép feltöltése</button><p id="avatarStatus"></p><p id="profileEmail"></p>
+    <hr><h3>🪪 Adatlapom</h3>
+    <p class="muted small">Add meg az adataidat, ha szeretnéd. Ezeket az adatokat csak te látod és szerkesztheted ezen az adatlapon. Pontos lakcímet ne adj meg; elég a település vagy a megye.</p>
+    <label for="profileAge">Életkor</label><input id="profileAge" type="number" min="13" max="99" inputmode="numeric" placeholder="Életkorod">
+    <label for="profileCity">Hol laksz? (település vagy megye)</label><input id="profileCity" type="text" maxlength="80" autocomplete="address-level2" placeholder="Például: Szeged">
+    <label for="profileGender">Nem</label><select id="profileGender"><option value="">Nem szeretném megadni</option><option value="Nő">Nő</option><option value="Férfi">Férfi</option><option value="Egyéb">Egyéb</option></select>
+    <button type="button" id="saveProfileDetails">Adatlap mentése</button><p id="profileDetailsStatus" class="muted small" role="status"></p>
+    <hr><h3>Háttérkép</h3><p class="muted small">A háttérkép ezen a böngészőn lesz elmentve.</p><input id="backgroundFile" type="file" accept="image/png,image/jpeg,image/webp">
        <section class="panel" id="sharedBackground">
   <h2>🎨 Közös chat-háttér</h2>
   <p>Minden tagnál megjelenő háttér beállítása.</p>
@@ -924,6 +931,25 @@ body='[[PREDATOR_IMAGE:'+(uploaded?.path||path)+']]'+(textBody?' '+textBody:'')}
  const {error}=await db.from('messages').insert({room_id:currentRoom.id,sender_id:currentUser.id,body});if(error){chatStatus('Az üzenet nem ment ki: '+error.message);return}
  $('message').value='';$('chatImageFile').value='';chatStatus('')
  }catch(err){chatStatus('Hiba: '+(err.message||'Ismeretlen hiba'))}finally{btn.disabled=false}
+});
+$('saveProfileDetails').addEventListener('click',async()=>{
+  if(!currentUser){$('profileDetailsStatus').textContent='Előbb jelentkezz be.';return}
+  const rawAge=$('profileAge').value.trim();
+  const age=rawAge===''?null:Number(rawAge);
+  const city=$('profileCity').value.trim();
+  const gender=$('profileGender').value;
+  if(age!==null&&(!Number.isInteger(age)||age<13||age>99)){
+    $('profileDetailsStatus').textContent='Az életkor 13 és 99 közötti egész szám legyen.';return
+  }
+  if(city.length>80){$('profileDetailsStatus').textContent='A település legfeljebb 80 karakter lehet.';return}
+  $('saveProfileDetails').disabled=true;
+  $('profileDetailsStatus').textContent='Adatlap mentése…';
+  const {error}=await db.from('profile_details').upsert({
+    user_id:currentUser.id,age,city:city||null,gender:gender||null
+  },{onConflict:'user_id'});
+  $('saveProfileDetails').disabled=false;
+  if(error){$('profileDetailsStatus').textContent='Mentési hiba: '+error.message+' — futtasd le az adatlap SQL-beállítását a Supabase-ben.';return}
+  $('profileDetailsStatus').textContent='Az adatlapod elmentve.';
 });
 $('saveDisplayName').addEventListener('click',async()=>{if(!currentUser){$('displayNameStatus').textContent='Előbb jelentkezz be.';return}const display_name=$('displayName').value.trim();if(display_name.length<2||display_name.length>32){$('displayNameStatus').textContent='A név 2–32 karakter legyen.';return}const old=profileCache.get(String(currentUser.id))||{};const {error}=await db.from('profiles').upsert({id:currentUser.id,email:currentUser.email,display_name,avatar_url:old.avatar_url||null},{onConflict:'id'});if(error){$('displayNameStatus').textContent='Névmentési hiba: '+error.message;return}profileCache.set(String(currentUser.id),{...old,id:currentUser.id,display_name,email:currentUser.email});$('userbar').textContent=display_name;$('displayNameStatus').textContent='A neved elmentve.';await loadMembers();if(currentRoom)await loadMessages()});
 async function loadSharedBackground(){
@@ -1368,6 +1394,15 @@ $('onlineMembersStatus').textContent='Nincs online tag';
   $('auth').classList.toggle('hidden',loggedIn||recoveryMode);$('app').classList.toggle('hidden',!loggedIn||recoveryMode);$('logout').classList.toggle('hidden',!loggedIn);$('userbar').textContent=loggedIn?(profileCache.get(String(currentUser.id))?.display_name||currentUser.user_metadata?.username||currentUser.user_metadata?.display_name||'Bejelentkezve'):'Nincs bejelentkezve';
   if(!loggedIn){if(messageChannel){db.removeChannel(messageChannel);messageChannel=null}currentRoom=null;$('messages').replaceChildren();$('adminTab').classList.add('hidden');$('roomAdminTools').classList.add('hidden');$('roleAdminTools').classList.add('hidden');$('vipAdminTools').classList.add('hidden');return}
   $('profileEmail').textContent='';$('displayName').value=profileCache.get(String(currentUser.id))?.display_name||currentUser.email?.split('@')[0]||'';
+  const {data:myDetails,error:detailsError}=await db.from('profile_details')
+    .select('age,city,gender').eq('user_id',currentUser.id).maybeSingle();
+  if(detailsError){
+    $('profileDetailsStatus').textContent='Az adatlap SQL-beállítása még szükséges: '+detailsError.message;
+  }else{
+    $('profileAge').value=myDetails?.age??'';
+    $('profileCity').value=myDetails?.city||'';
+    $('profileGender').value=myDetails?.gender||'';
+  }
   await loadProfileCache();
   const oldProfile=profileCache.get(String(currentUser.id))||{};
   const {error:ownProfileError}=await db.from('profiles').upsert({id:currentUser.id,email:currentUser.email,display_name:currentUser.user_metadata?.username||currentUser.user_metadata?.display_name||oldProfile.display_name||currentUser.email?.split('@')[0]||'Tag',avatar_url:oldProfile.avatar_url||null},{onConflict:'id'});
