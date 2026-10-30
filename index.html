@@ -1,4 +1,3 @@
-```
 <!DOCTYPE html>
 <html lang="hu">
 <head>
@@ -353,6 +352,87 @@ h2,h3{margin-top:6px;color:#fff}
 #games .xo-cell:disabled{opacity:1;cursor:default}
 #games .xo-cell.x{color:#ff5368}#games .xo-cell.o{color:#fff}
 #games .game-note{font-size:13px;color:#bdbdc7}
+</style>
+
+
+<style id="predator-transparent-glass">
+/* Áttetsző, üveghatású Predator Chat – a piros-fekete téma megmarad */
+:root{
+  --glass-bg:rgba(12,12,17,.48);
+  --glass-bg-strong:rgba(12,10,14,.68);
+  --glass-border:rgba(255,55,78,.38);
+}
+html,body{background-color:#08070a}
+body{
+  background:
+    radial-gradient(ellipse at 18% 8%,rgba(125,12,35,.22),transparent 42%),
+    radial-gradient(ellipse at 85% 35%,rgba(40,15,45,.20),transparent 45%),
+    #08070a;
+  background-attachment:fixed;
+}
+header{
+  background:rgba(7,7,10,.58)!important;
+  -webkit-backdrop-filter:blur(16px);
+  backdrop-filter:blur(16px);
+}
+.panel,
+.predator-layout>aside,
+.predator-layout>section,
+#chat .layout>aside,
+#privatePopup,
+#memberActionCard,
+.auth{
+  background:var(--glass-bg)!important;
+  border:1px solid var(--glass-border)!important;
+  -webkit-backdrop-filter:blur(18px) saturate(125%);
+  backdrop-filter:blur(18px) saturate(125%);
+  box-shadow:0 10px 35px rgba(0,0,0,.20),inset 0 1px rgba(255,255,255,.045)!important;
+}
+.predator-layout>section{
+  background:rgba(10,8,13,.43)!important;
+}
+.tabs{
+  background:rgba(8,8,12,.42)!important;
+  -webkit-backdrop-filter:blur(14px);
+  backdrop-filter:blur(14px);
+}
+#rooms button,
+.member-item,
+.msg,
+.composer,
+#privatePopupHeader,
+#privatePopupForm,
+.private-popup-message{
+  background-color:rgba(10,10,15,.30)!important;
+}
+#messages{
+  background:rgba(0,0,0,.10);
+  border-radius:12px;
+}
+.msg{border-bottom-color:rgba(255,70,90,.18)!important}
+.msg:hover{background:rgba(255,255,255,.055)!important}
+.composer{
+  border-color:rgba(255,50,75,.38)!important;
+  -webkit-backdrop-filter:blur(14px);
+  backdrop-filter:blur(14px);
+}
+.composer input,
+input,select,textarea{
+  background:rgba(5,5,9,.48)!important;
+}
+#privatePopupMessages{background:rgba(5,5,9,.22)!important}
+#privatePopupHeader,#privatePopupForm{background:rgba(5,5,9,.48)!important}
+#privatePopup .private-popup-message{background:rgba(35,28,36,.55)!important}
+#privatePopup .private-popup-message.mine{background:rgba(105,12,34,.48)!important}
+@supports not ((backdrop-filter:blur(2px)) or (-webkit-backdrop-filter:blur(2px))){
+  .panel,.predator-layout>aside,.predator-layout>section,.auth{background:rgba(12,12,17,.82)!important}
+}
+@media(max-width:620px){
+  .panel,.predator-layout>aside,.predator-layout>section{
+    -webkit-backdrop-filter:blur(12px);
+    backdrop-filter:blur(12px);
+  }
+}
 </style>
 
 </head>
@@ -1744,4 +1824,3 @@ async function moderateMember(action){
 
 </body>
 </html>
-```
