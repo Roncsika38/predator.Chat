@@ -355,83 +355,77 @@ h2,h3{margin-top:6px;color:#fff}
 </style>
 
 
-<style id="predator-transparent-glass">
-/* Áttetsző, üveghatású Predator Chat – a piros-fekete téma megmarad */
-:root{
-  --glass-bg:rgba(12,12,17,.48);
-  --glass-bg-strong:rgba(12,10,14,.68);
-  --glass-border:rgba(255,55,78,.38);
+<style id="predator-glass-strong">
+/* Erősen áttetsző üveghatás – a meglévő háttérkép is látható marad */
+:root {
+  --glass-panel: rgba(8, 8, 13, .16);
+  --glass-panel-soft: rgba(8, 8, 13, .09);
+  --glass-edge: rgba(255, 48, 75, .48);
 }
-html,body{background-color:#08070a}
-body{
-  background:
-    radial-gradient(ellipse at 18% 8%,rgba(125,12,35,.22),transparent 42%),
-    radial-gradient(ellipse at 85% 35%,rgba(40,15,45,.20),transparent 45%),
-    #08070a;
-  background-attachment:fixed;
+html, body { min-height: 100%; }
+body {
+  background-color: #09090d;
+  background-attachment: fixed;
 }
-header{
-  background:rgba(7,7,10,.58)!important;
-  -webkit-backdrop-filter:blur(16px);
-  backdrop-filter:blur(16px);
-}
+/* Minden fő chatpanel valóban áttetsző */
 .panel,
-.predator-layout>aside,
-.predator-layout>section,
-#chat .layout>aside,
-#privatePopup,
-#memberActionCard,
-.auth{
-  background:var(--glass-bg)!important;
-  border:1px solid var(--glass-border)!important;
-  -webkit-backdrop-filter:blur(18px) saturate(125%);
-  backdrop-filter:blur(18px) saturate(125%);
-  box-shadow:0 10px 35px rgba(0,0,0,.20),inset 0 1px rgba(255,255,255,.045)!important;
+#chat.predator-layout > aside,
+#chat.predator-layout > section,
+#chat .predator-members,
+#auth.panel,
+#members.panel, #private.panel, #profile.panel, #vip.panel, #admin.panel,
+#music.panel, #radio.panel, #games.panel {
+  background: var(--glass-panel) !important;
+  background-image: none !important;
+  border: 1px solid var(--glass-edge) !important;
+  -webkit-backdrop-filter: blur(22px) saturate(145%) !important;
+  backdrop-filter: blur(22px) saturate(145%) !important;
+  box-shadow: 0 8px 32px rgba(0,0,0,.16), inset 0 1px rgba(255,255,255,.09) !important;
 }
-.predator-layout>section{
-  background:rgba(10,8,13,.43)!important;
+/* A középső beszélgetés háttere különösen áttetsző */
+#chat.predator-layout > section {
+  background: rgba(7, 7, 12, .10) !important;
 }
-.tabs{
-  background:rgba(8,8,12,.42)!important;
-  -webkit-backdrop-filter:blur(14px);
-  backdrop-filter:blur(14px);
-}
+/* A szobák, tagok és üzenetek se kapjanak tömör hátteret */
 #rooms button,
-.member-item,
+#onlineMemberList .member-item,
+#memberList .member-item,
 .msg,
+#messages,
 .composer,
-#privatePopupHeader,
-#privatePopupForm,
-.private-popup-message{
-  background-color:rgba(10,10,15,.30)!important;
+.tabs {
+  background: var(--glass-panel-soft) !important;
+  -webkit-backdrop-filter: blur(14px) !important;
+  backdrop-filter: blur(14px) !important;
 }
-#messages{
-  background:rgba(0,0,0,.10);
-  border-radius:12px;
+#messages { border: 1px solid rgba(255,255,255,.07); }
+.msg { border-bottom: 1px solid rgba(255,55,78,.16) !important; }
+.msg:hover { background: rgba(255,255,255,.07) !important; }
+.composer {
+  background: rgba(5,5,9,.18) !important;
+  border: 1px solid rgba(255,48,75,.45) !important;
 }
-.msg{border-bottom-color:rgba(255,70,90,.18)!important}
-.msg:hover{background:rgba(255,255,255,.055)!important}
-.composer{
-  border-color:rgba(255,50,75,.38)!important;
-  -webkit-backdrop-filter:blur(14px);
-  backdrop-filter:blur(14px);
+header {
+  background: rgba(5,5,8,.30) !important;
+  -webkit-backdrop-filter: blur(20px) !important;
+  backdrop-filter: blur(20px) !important;
 }
-.composer input,
-input,select,textarea{
-  background:rgba(5,5,9,.48)!important;
+input, select, textarea,
+.composer input {
+  background: rgba(5,5,9,.28) !important;
 }
-#privatePopupMessages{background:rgba(5,5,9,.22)!important}
-#privatePopupHeader,#privatePopupForm{background:rgba(5,5,9,.48)!important}
-#privatePopup .private-popup-message{background:rgba(35,28,36,.55)!important}
-#privatePopup .private-popup-message.mine{background:rgba(105,12,34,.48)!important}
-@supports not ((backdrop-filter:blur(2px)) or (-webkit-backdrop-filter:blur(2px))){
-  .panel,.predator-layout>aside,.predator-layout>section,.auth{background:rgba(12,12,17,.82)!important}
+#privatePopup, #memberActionCard {
+  background: rgba(8,8,13,.22) !important;
+  -webkit-backdrop-filter: blur(22px) !important;
+  backdrop-filter: blur(22px) !important;
 }
-@media(max-width:620px){
-  .panel,.predator-layout>aside,.predator-layout>section{
-    -webkit-backdrop-filter:blur(12px);
-    backdrop-filter:blur(12px);
-  }
+#privatePopupMessages { background: rgba(5,5,9,.10) !important; }
+#privatePopup .private-popup-message { background: rgba(30,25,34,.34) !important; }
+#privatePopup .private-popup-message.mine { background: rgba(105,12,34,.30) !important; }
+@media (max-width: 620px) {
+  #chat.predator-layout > section,
+  #chat.predator-layout > aside,
+  .panel { -webkit-backdrop-filter: blur(16px) !important; backdrop-filter: blur(16px) !important; }
 }
 </style>
 
@@ -1824,3 +1818,4 @@ async function moderateMember(action){
 
 </body>
 </html>
+```
