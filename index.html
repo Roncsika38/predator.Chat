@@ -1,3 +1,4 @@
+````
 ```
 <!DOCTYPE html>
 <html lang="hu">
@@ -609,7 +610,7 @@ header {
   <button type="button" id="sharedBgUpload">Kép beállítása mindenkinek</button>
   <button type="button" id="sharedBgReset">Alap háttér visszaállítása</button>
   <p id="sharedBgStatus" role="status"></p>
-</section>                                                                                                                                                                                                                  <button type="button" id="uploadBackground">Háttérkép beállítása</button><button type="button" id="clearBackground">Háttérkép törlése</button><p id="backgroundStatus" class="muted small"></p>
+</section>
   </section>
   <section id="vip" class="panel hidden">
     <h2>🛒 Predator VIP Bolt</h2>
@@ -954,119 +955,6 @@ $('saveProfileDetails').addEventListener('click',async()=>{
   $('profileDetailsStatus').textContent='Az adatlapod elmentve.';
 });
 $('saveDisplayName').addEventListener('click',async()=>{if(!currentUser){$('displayNameStatus').textContent='Előbb jelentkezz be.';return}const display_name=$('displayName').value.trim();if(display_name.length<2||display_name.length>32){$('displayNameStatus').textContent='A név 2–32 karakter legyen.';return}const old=profileCache.get(String(currentUser.id))||{};const {error}=await db.from('profiles').upsert({id:currentUser.id,email:currentUser.email,display_name,avatar_url:old.avatar_url||null},{onConflict:'id'});if(error){$('displayNameStatus').textContent='Névmentési hiba: '+error.message;return}profileCache.set(String(currentUser.id),{...old,id:currentUser.id,display_name,email:currentUser.email});$('userbar').textContent=display_name;$('displayNameStatus').textContent='A neved elmentve.';await loadMembers();if(currentRoom)await loadMessages()});
-async function loadSharedBackground(){
-  const {data,error}=await db
-    .from('chat_background')
-    .select('background_type,background_value')
-    .eq('id',1)
-    .maybeSingle();
-
-  if(error){
-    $('backgroundStatus').textContent='Betöltési hiba: '+error.message;
-    return;
-  }
-
-  if(data) applySharedBackground(
-    data.background_type,
-    data.background_value
-  );
-}
-
-function applySharedBackground(type,value){
-  document.body.style.backgroundImage='';
-  document.body.style.backgroundColor='#101012';
-
-  if(type==='image' && value){
-    document.body.style.backgroundImage=
-      'linear-gradient(#09090c88,#09090c99),url("'+value+'")';
-    document.body.style.backgroundSize='cover';
-    document.body.style.backgroundPosition='center';
-    document.body.style.backgroundAttachment='fixed';
-  }else{
-    document.body.style.backgroundColor=value||'#101012';
-  }
-}
-
-async function saveSharedBackground(type,value){
-  if(!currentUser || String(currentUser.id)!=='aef9063e-f704-4a28-b3c2-6a1373c5c4f5'){
-    $('backgroundStatus').textContent='A közös hátteret kizárólag a Predator Chat tulajdonosa állíthatja.';
-    return;
-  }
-
-  $('backgroundStatus').textContent='Mentés...';
-
-  const {error}=await db.from('chat_background').upsert({
-    id:1,
-    background_type:type,
-    background_value:value,
-    updated_at:new Date().toISOString()
-  },{onConflict:'id'});
-
-  if(error){
-    $('backgroundStatus').textContent='Hiba: '+error.message;
-    return;
-  }
-
-  applySharedBackground(type,value);
-  $('backgroundStatus').textContent=
-    'A közös háttér elmentve!';
-}
-
-$('uploadBackground').addEventListener('click',async()=>{
-  if(!currentUser || String(currentUser.id)!=='aef9063e-f704-4a28-b3c2-6a1373c5c4f5'){$('backgroundStatus').textContent='Csak a tulajdonos állíthatja a hátteret.';return}
-  const file=$('backgroundFile')?.files[0];
-
-  if(!file){
-    $('backgroundStatus').textContent='Válassz ki egy képet!';
-    return;
-  }
-
-  if(!['image/jpeg','image/png','image/webp'].includes(file.type)){
-    $('backgroundStatus').textContent='JPG, PNG vagy WEBP képet válassz!';
-    return;
-  }
-
-  if(file.size>5*1024*1024){
-    $('backgroundStatus').textContent='A kép legfeljebb 5 MB lehet!';
-    return;
-  }
-
-  if(!currentUser){
-    $('backgroundStatus').textContent='Előbb jelentkezz be!';
-    return;
-  }
-
-  $('backgroundStatus').textContent='Kép feltöltése...';
-
-  const ext={
-    'image/jpeg':'jpg',
-    'image/png':'png',
-    'image/webp':'webp'
-  }[file.type];
-
-  const path=currentUser.id+'/'+Date.now()+'.'+ext;
-
-  const {data,error}=await db.storage
-    .from('chat-backgrounds')
-    .upload(path,file,{upsert:false,contentType:file.type});
-
-  if(error){
-    $('backgroundStatus').textContent='Feltöltési hiba: '+error.message;
-    return;
-  }
-
-  const {data:urlData}=db.storage
-    .from('chat-backgrounds')
-    .getPublicUrl(data.path);
-
-  await saveSharedBackground('image',urlData.publicUrl);
-});
-
-$('clearBackground').addEventListener('click',()=>{
-  saveSharedBackground('color','#101012');
-});
-
-loadSharedBackground();
 function setMemberStatus(message){$('membersStatus').textContent=message||''}
 function setPrivateStatus(message){$('privateStatus').textContent=message||''}
 
@@ -1376,7 +1264,7 @@ $('musicUploadForm').addEventListener('submit', async e => {
 onlineUserIds.clear();
 $('onlineMemberList').replaceChildren();
 $('onlineMembersStatus').textContent='Nincs online tag';
-  currentUser=session?.user||null;const loggedIn=!!currentUser;
+  currentUser=session?.user||null;window.currentUser=currentUser;const loggedIn=!!currentUser;
   if(moderationPollTimer){clearInterval(moderationPollTimer);moderationPollTimer=null;}
   moderationExitInProgress=false;
   if(loggedIn){
@@ -1497,7 +1385,7 @@ db.auth.onAuthStateChange((event,session)=>{if(event==='PASSWORD_RECOVERY'){show
   }
 
   async function saveBackground(type, value) {
-    if (!window.currentUser || String(window.currentUser.id) !== 'aef9063e-f704-4a28-b3c2-6a1373c5c4f5') {
+    if (!window.currentUser || String(window.currentUser.id) !== 'aef906e3-f704-4a28-b3c2-6a1373c5c4f5') {
       status.textContent = 'A közös hátteret kizárólag a Predator Chat tulajdonosa állíthatja.';
       return;
     }
@@ -1534,7 +1422,7 @@ db.auth.onAuthStateChange((event,session)=>{if(event==='PASSWORD_RECOVERY'){show
   });
 
   document.getElementById('sharedBgUpload').addEventListener('click', async () => {
-    if (!window.currentUser || String(window.currentUser.id) !== 'aef9063e-f704-4a28-b3c2-6a1373c5c4f5') {
+    if (!window.currentUser || String(window.currentUser.id) !== 'aef906e3-f704-4a28-b3c2-6a1373c5c4f5') {
       status.textContent = 'A háttérképet kizárólag a tulajdonos állíthatja be.';
       return;
     }
@@ -1564,10 +1452,10 @@ db.auth.onAuthStateChange((event,session)=>{if(event==='PASSWORD_RECOVERY'){show
 
     const { data, error } = await db.storage
       .from('chat-backgrounds')
-      .upload(path, file, { contentType: file.type });
+      .upload(path, file, { upsert: false, contentType: file.type });
 
     if (error) {
-      status.textContent = 'Feltöltési hiba: ' + error.message;
+      status.textContent = 'Feltöltési hiba: ' + error.message + ' (Ellenőrizd, hogy a chat-backgrounds tárhely és a feltöltési szabály létezik-e.)';
       return;
     }
 
@@ -1867,3 +1755,4 @@ async function moderateMember(action){
 </body>
 </html>
 ```
+````
