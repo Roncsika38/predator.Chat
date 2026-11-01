@@ -1750,5 +1750,52 @@ async function moderateMember(action){
 })();
 </script>
 
+
+<style>
+#predatorCallPanel{position:fixed;inset:0;z-index:10050;background:#000c;display:none;align-items:center;justify-content:center;padding:14px}
+#predatorCallCard{width:min(720px,100%);background:#100d12;border:1px solid #ff243c;border-radius:16px;padding:16px;color:#fff;box-shadow:0 12px 50px #000}
+#predatorCallVideos{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:12px 0}
+#predatorCallVideos video{width:100%;max-height:260px;background:#050505;border-radius:10px;object-fit:cover}
+#predatorCallStatus{color:#ffc3ca;min-height:24px}
+#predatorCallCard button{margin:4px}
+@media(max-width:520px){#predatorCallVideos{grid-template-columns:1fr}#predatorCallVideos video{max-height:190px}}
+</style>
+<div id="predatorCallPanel" aria-live="polite">
+ <section id="predatorCallCard" role="dialog" aria-modal="true" aria-label="Predator Chat hívás">
+  <h2 id="predatorCallTitle">Predator Chat hívás</h2>
+  <p id="predatorCallStatus">Hívás előkészítése…</p>
+  <div id="predatorCallVideos"><video id="predatorLocalVideo" autoplay playsinline muted></video><video id="predatorRemoteVideo" autoplay playsinline></video></div>
+  <div id="predatorCallActions"></div>
+ </section>
+</div>
+<script>
+// Predator Chat – valódi tagok közötti hang-/videóhívás. A Supabase SQL beállítása szükséges.
+(function(){
+ 'use strict';
+ const $c=id=>document.getElementById(id);
+ let pc=null,localStream=null,activeCall=null,lastSignalAt='1970-01-01T00:00:00.000Z',pollTimer=null,incomingSeen=new Set(),busy=false,callMode='audio';
+ const rtcConfig={iceServers:[{urls:'stun:stun.l.google.com:19302'},{urls:'stun:stun1.l.google.com:19302'}]};
+ function ui(title,status,buttons){$c('predatorCallTitle').textContent=title;$c('predatorCallStatus').textContent=status;$c('predatorCallActions').replaceChildren();(buttons||[]).forEach(([label,fn,kind])=>{const b=document.createElement('button');b.type='button';b.textContent=label;if(kind==='danger')b.style.background='#b00020';b.addEventListener('click',fn);$c('predatorCallActions').append(b)});$c('predatorCallPanel').style.display='flex';}
+ function hide(){ $c('predatorCallPanel').style.display='none'; }
+ async function sendSignal(type,payload){if(!activeCall||!currentUser)throw new Error('Nincs aktív hívás.');const recipient=String(activeCall.caller_id)===String(currentUser.id)?activeCall.callee_id:activeCall.caller_id;const {error}=await db.from('predator_call_signals').insert({call_id:activeCall.id,sender_id:currentUser.id,recipient_id:recipient,signal_type:type,payload});if(error)throw error;}
+ async function setCallStatus(status){if(!activeCall)return;const {error}=await db.from('predator_calls').update({status}).eq('id',activeCall.id);if(error)console.warn('Hívásállapot:',error.message);}
+ async function stopCall(message='A hívás befejeződött.'){if(activeCall&&currentUser){try{await sendSignal('hangup',{});}catch(_){}}if(pollTimer){clearInterval(pollTimer);pollTimer=null;}if(pc){pc.onicecandidate=null;pc.ontrack=null;pc.close();pc=null;}if(localStream){localStream.getTracks().forEach(t=>t.stop());localStream=null;}if(activeCall)await setCallStatus('ended');activeCall=null;$c('predatorLocalVideo').srcObject=null;$c('predatorRemoteVideo').srcObject=null;ui('Predator Chat',message,[['Bezárás',hide]]);setTimeout(()=>{if(!activeCall)hide()},2200);}
+ async function addSignal(type,payload){await sendSignal(type,payload);}
+ async function setupPeer(video){pc=new RTCPeerConnection(rtcConfig);pc.onicecandidate=e=>{if(e.candidate)addSignal('ice',e.candidate.toJSON()).catch(err=>console.warn(err.message));};pc.ontrack=e=>{$c('predatorRemoteVideo').srcObject=e.streams[0];};localStream=await navigator.mediaDevices.getUserMedia({audio:true,video:!!video});$c('predatorLocalVideo').srcObject=localStream;localStream.getTracks().forEach(t=>pc.addTrack(t,localStream));}
+ async function fetchSignals(){if(!activeCall||!currentUser||busy)return;busy=true;try{const {data,error}=await db.from('predator_call_signals').select('id,signal_type,payload,created_at,sender_id').eq('call_id',activeCall.id).eq('recipient_id',currentUser.id).gt('created_at',lastSignalAt).order('created_at',{ascending:true}).limit(100);if(error)throw error;for(const sig of data||[]){lastSignalAt=sig.created_at;if(sig.signal_type==='answer'&&pc&&pc.signalingState==='have-local-offer'){await pc.setRemoteDescription(new RTCSessionDescription(sig.payload));ui('Hívás folyamatban','Kapcsolódva.',[['Mikrofon némítása',toggleMic],['Hívás bontása',()=>stopCall() ,'danger']]);}else if(sig.signal_type==='ice'&&pc){try{await pc.addIceCandidate(new RTCIceCandidate(sig.payload));}catch(e){console.warn('ICE jelzés:',e.message)}}else if(sig.signal_type==='hangup'){await stopCall('A másik tag bontotta a hívást.');break;}}}catch(e){console.warn('Hívásjelzés:',e.message);}finally{busy=false;}}
+ function toggleMic(){if(!localStream)return;const t=localStream.getAudioTracks()[0];if(t){t.enabled=!t.enabled;ui('Hívás folyamatban',t.enabled?'A mikrofon be van kapcsolva.':'A mikrofon némítva van.',[['Mikrofon váltása',toggleMic],['Hívás bontása',()=>stopCall(),'danger']]);}}
+ async function pollIncoming(){if(!currentUser||activeCall)return;const {data,error}=await db.from('predator_calls').select('id,caller_id,callee_id,call_type,status,created_at').eq('callee_id',currentUser.id).eq('status','ringing').order('created_at',{ascending:false}).limit(1);if(error){console.warn('Bejövő hívás:',error.message);return;}const c=data?.[0];if(!c||incomingSeen.has(c.id))return;incomingSeen.add(c.id);activeCall=c;callMode=c.call_type==='video'?'video':'audio';ui(callMode==='video'?'Bejövő videóhívás':'Bejövő hanghívás','Egy Predator Chat-tag hív.',[['Fogadás',()=>acceptCall(c)],['Elutasítás',()=>rejectCall(c),'danger']]);}
+ async function rejectCall(c){activeCall=c;await setCallStatus('declined');activeCall=null;hide();}
+ async function acceptCall(c){try{activeCall=c;lastSignalAt='1970-01-01T00:00:00.000Z';await setupPeer(callMode==='video');const {data,error}=await db.from('predator_call_signals').select('payload,created_at').eq('call_id',c.id).eq('signal_type','offer').order('created_at',{ascending:false}).limit(1).maybeSingle();if(error)throw error;if(!data)throw new Error('A hívás ajánlata nem érkezett meg.');await pc.setRemoteDescription(new RTCSessionDescription(data.payload));const answer=await pc.createAnswer();await pc.setLocalDescription(answer);await sendSignal('answer',answer);await setCallStatus('accepted');ui('Hívás folyamatban','Kapcsolódás…', [['Mikrofon váltása',toggleMic],['Hívás bontása',()=>stopCall(),'danger']]);pollTimer=setInterval(fetchSignals,900);}catch(e){ui('Hívási hiba',e.message,[['Bezárás',()=>stopCall('A hívás nem indult el.')]]);}}
+ async function startCall(profile,mode){if(!currentUser||!profile?.id||String(profile.id)===String(currentUser.id))return;if(!navigator.mediaDevices?.getUserMedia){alert('A kamera/mikrofon csak biztonságos HTTPS oldalon érhető el. Nyisd meg a GitHub Pages HTTPS címét.');return;}try{callMode=mode;const {data:call,error}=await db.from('predator_calls').insert({caller_id:currentUser.id,callee_id:profile.id,call_type:mode,status:'ringing'}).select('id,caller_id,callee_id,call_type,status,created_at').single();if(error)throw error;activeCall=call;lastSignalAt='1970-01-01T00:00:00.000Z';ui(mode==='video'?'Videóhívás':'Hanghívás','A másik tag hívása…',[['Hívás bontása',()=>stopCall(),'danger']]);await setupPeer(mode==='video');const offer=await pc.createOffer();await pc.setLocalDescription(offer);await sendSignal('offer',offer);pollTimer=setInterval(async()=>{await fetchSignals();const {data}=await db.from('predator_calls').select('status').eq('id',call.id).maybeSingle();if(data?.status==='declined'||data?.status==='ended')await stopCall('A hívást elutasították vagy befejezték.');},1000);}catch(e){await stopCall('Hívási hiba: '+(e.message||'Ismeretlen hiba'));alert('Nem indult el a hívás: '+(e.message||'Ellenőrizd a Supabase SQL-beállításokat.'));}}
+ // A meglévő tagműveleti ablakhoz kapcsoljuk a két hívógombot.
+ const oldEnsure=window.ensureMemberActionModal || (typeof ensureMemberActionModal==='function'?ensureMemberActionModal:null);
+ if(oldEnsure){window.ensureMemberActionModal=function(){oldEnsure();const card=document.getElementById('memberActionCard');if(!card||card.querySelector('#predatorAudioCall'))return;const row=document.createElement('div');row.className='actions';row.innerHTML='<button id="predatorAudioCall" type="button">📞 Hanghívás</button><button id="predatorVideoCall" type="button">📹 Videóhívás</button>';card.querySelector('.actions')?.after(row);row.querySelector('#predatorAudioCall').addEventListener('click',()=>{const p=window.activeMemberProfile||activeMemberProfile;startCall(p,'audio')});row.querySelector('#predatorVideoCall').addEventListener('click',()=>{const p=window.activeMemberProfile||activeMemberProfile;startCall(p,'video')});};}
+ // Aktív felhasználói munkamenet figyelése; egyszerű pollingot használ, külön Realtime publication nem kell.
+ setInterval(()=>{if(currentUser&&!activeCall)pollIncoming();},2500);
+ document.addEventListener('visibilitychange',()=>{if(!document.hidden&&currentUser&&!activeCall)pollIncoming();});
+})();
+</script>
+
 </body>
 </html>
