@@ -1,9 +1,15 @@
-```
 <!DOCTYPE html>
 <html lang="hu">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#090606">
+<meta name="application-name" content="Predator Chat">
+<link rel="manifest" href="./manifest.webmanifest">
+<link rel="apple-touch-icon" href="./icons/icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Predator Chat">
 <title>Predator Chat</title>
 <meta name="description" content="Predator Chat – magyar online közösségi chat, chatszobákkal, profilokkal és üzenetküldéssel.">
 <meta name="robots" content="index, follow">
@@ -510,6 +516,7 @@ a{color:#ffad62}
   <h1>🔴 Predator <span>Chat</span></h1>
   <div id="userbar" class="muted">Nincs bejelentkezve</div>
   <button id="logout" class="hidden" type="button">Kilépés</button>
+  <button id="installApp" type="button" class="hidden" style="background:#25252d;border:1px solid #ff7518">📲 App telepítése</button>
 </header>
 <main>
 <section id="auth" class="panel auth">
@@ -1867,6 +1874,39 @@ async function moderateMember(action){
 })();
 </script>
 
+
+<script>
+/* Predator Chat PWA – telepítés */
+(() => {
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('./sw.js', {scope: './'})
+        .catch(err => console.warn('PWA service worker:', err));
+    });
+  }
+  const installButton = document.getElementById('installApp');
+  let installPrompt = null;
+  window.addEventListener('beforeinstallprompt', event => {
+    event.preventDefault();
+    installPrompt = event;
+    if (installButton) installButton.classList.remove('hidden');
+  });
+  installButton?.addEventListener('click', async () => {
+    if (!installPrompt) {
+      alert('iPhone-on: Safari → Megosztás → Főképernyőhöz adás. Androidon: Chrome menü → Alkalmazás telepítése vagy Kezdőképernyőhöz adás.');
+      return;
+    }
+    installPrompt.prompt();
+    await installPrompt.userChoice;
+    installPrompt = null;
+    installButton.classList.add('hidden');
+  });
+  window.addEventListener('appinstalled', () => {
+    installPrompt = null;
+    installButton?.classList.add('hidden');
+  });
+})();
+</script>
+
 </body>
 </html>
-```
