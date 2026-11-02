@@ -435,6 +435,75 @@ header {
 }
 </script>
 
+
+<style id="predator-halloween-theme">
+:root{
+ --bg:#090606;--panel:#15100f;--panel2:#211512;--red:#ff7518;--red2:#c43b08;
+ --text:#fff4e8;--muted:#c4aaa0;--line:#633018;
+}
+html,body{min-height:100%;background:#080505}
+body{
+ color:var(--text);
+ background:
+  radial-gradient(ellipse at 50% 0%,rgba(255,91,0,.22),transparent 42%),
+  radial-gradient(ellipse at 8% 75%,rgba(177,38,0,.16),transparent 32%),
+  linear-gradient(180deg,#100706 0%,#080506 58%,#120804 100%);
+}
+body:before{
+ content:"🎃   🦇                                  🕸";
+ position:fixed;inset:0 0 auto 0;height:82px;z-index:0;pointer-events:none;
+ display:flex;justify-content:space-around;align-items:center;
+ font-size:clamp(22px,4vw,42px);opacity:.22;
+ text-shadow:0 0 18px #ff6a00;
+}
+header{
+ position:sticky;top:0;z-index:10;
+ background:linear-gradient(100deg,rgba(12,6,5,.97),rgba(48,17,5,.96),rgba(10,6,5,.97))!important;
+ border-bottom:2px solid #ff7518!important;
+ box-shadow:0 5px 28px #ff5b1838!important;
+}
+h1{font-weight:900;letter-spacing:1px;text-transform:uppercase;text-shadow:0 0 14px #ff6a00}
+h1:before{content:"🎃 ";font-size:.85em}
+h1 span{color:#ff8a24!important;text-shadow:0 0 15px #ff5b00!important}
+button{
+ background:linear-gradient(135deg,#ff8a1d,#bd3908)!important;
+ border:1px solid #ff9b38!important;color:#fff!important;
+ box-shadow:0 0 12px #ff65002b!important;
+}
+button:hover{background:linear-gradient(135deg,#ffad42,#df4a0b)!important;box-shadow:0 0 18px #ff710066!important}
+input,select,textarea{background:#100b0a!important;border-color:#704027!important;color:#fff4e8!important}
+input:focus,select:focus,textarea:focus{border-color:#ff8a24!important;box-shadow:0 0 0 2px #ff8a2428}
+.panel,.predator-layout>aside,.predator-layout>section{
+ background:linear-gradient(145deg,rgba(31,17,13,.94),rgba(9,7,7,.94))!important;
+ border:1px solid #a64b19!important;border-radius:16px!important;
+ box-shadow:0 8px 28px #0009,0 0 15px #ff650018!important;
+}
+.tabs{background:#100907!important;border:1px solid #75401f!important}
+.tabs button{border:1px solid #593018!important;background:linear-gradient(#21130e,#100907)!important}
+.tabs button.active,.rooms button.active,#rooms button.active{
+ background:linear-gradient(135deg,#ff8a1d,#a92d08)!important;
+ border-color:#ffad50!important;box-shadow:0 0 18px #ff6a0055!important
+}
+.rooms button,#rooms button{background:linear-gradient(90deg,#28150e,#110a08)!important;border-color:#74401f!important}
+#roomTitle{color:#ff9b42!important;text-shadow:0 0 12px #ff680044}
+#messages{scrollbar-color:#b95118 #170d09}
+.msg{border-bottom:1px solid #59301d!important}
+.msg-avatar{border:2px solid #f07824!important;box-shadow:0 0 10px #ff741c44}
+.composer,#privatePopupForm{background:rgba(15,8,6,.96)!important;border:1px solid #a64b19!important}
+.composer input{border-color:#a64b19!important}
+.member-item img{border:2px solid #e87525!important}
+#privatePopup,#memberActionCard{background:#160d0a!important;border-color:#ff7518!important}
+.private-popup-message.mine{background:#51200d!important;border-color:#bd5a1d!important}
+.auth{background:linear-gradient(145deg,#26130c,#100908)!important;border-color:#a64b19!important}
+h2,h3{color:#ffb36b}
+a{color:#ffad62}
+#status,#chatStatus,#avatarStatus,#roomAdminStatus,#roleStatus{color:#ffc09a}
+@media(max-width:620px){
+ body:before{height:55px;font-size:22px}
+ .predator-layout>aside,.predator-layout>section{border-radius:13px!important}
+}
+</style>
+
 </head>
 <body>
 <header>
