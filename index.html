@@ -518,6 +518,11 @@ a{color:#ffad62}
   <button id="logout" class="hidden" type="button">Kilépés</button>
   <button id="installApp" type="button" class="hidden" style="background:#25252d;border:1px solid #ff7518">📲 App telepítése</button>
 </header>
+<div id="predatorInstallBanner" role="region" aria-label="Predator Chat alkalmazás telepítése" style="display:none;max-width:1100px;margin:10px auto;padding:12px 14px;border:1px solid #ff7518;border-radius:14px;background:linear-gradient(135deg,#241008,#100807);color:#fff4e8;align-items:center;gap:10px;justify-content:space-between;box-shadow:0 4px 18px #ff751822">
+  <div style="min-width:0;flex:1"><strong style="display:block;color:#ffad62">📱 Telepítsd a Predator Chatet!</strong><span id="predatorInstallText" style="font-size:13px;color:#e7cfc1">Tedd ki a telefonod főképernyőjére, és nyisd meg külön alkalmazásként.</span></div>
+  <button id="installApp" type="button" style="white-space:nowrap;background:linear-gradient(135deg,#ff8a1d,#bd3908);padding:10px 13px">Telepítés</button>
+  <button id="dismissInstallBanner" type="button" aria-label="Bezárás" style="padding:7px 10px;background:#34201a;border:1px solid #75401f">✕</button>
+</div>
 <main>
 <section id="auth" class="panel auth">
   
@@ -1876,35 +1881,55 @@ async function moderateMember(action){
 
 
 <script>
-/* Predator Chat PWA – telepítés */
+/* Predator Chat PWA – telepítési ajánlat telefonon */
 (() => {
+  const banner = document.getElementById('predatorInstallBanner');
+  const button = document.getElementById('installApp');
+  const close = document.getElementById('dismissInstallBanner');
+  const text = document.getElementById('predatorInstallText');
+  if (!banner || !button) return;
+  let deferredPrompt = null;
+  const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent) && !window.MSStream;
+  const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+  const isMobile = /android|iphone|ipad|ipod/i.test(navigator.userAgent);
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
-      navigator.serviceWorker.register('./sw.js', {scope: './'})
+      navigator.serviceWorker.register('./sw.js', { scope: './' })
         .catch(err => console.warn('PWA service worker:', err));
     });
   }
-  const installButton = document.getElementById('installApp');
-  let installPrompt = null;
+  if (!isMobile || isStandalone || sessionStorage.getItem('predatorInstallDismissed') === '1') return;
+  banner.style.display = 'flex';
+  if (isIOS) {
+    text.textContent = 'iPhone-on: Safari → Megosztás → Főképernyőhöz adás.';
+    button.textContent = 'Telepítési útmutató';
+  }
   window.addEventListener('beforeinstallprompt', event => {
     event.preventDefault();
-    installPrompt = event;
-    if (installButton) installButton.classList.remove('hidden');
+    deferredPrompt = event;
+    banner.style.display = 'flex';
+    text.textContent = 'Telepítsd a telefonodra, és indítsd a Predator Chatet saját ikonról!';
+    button.textContent = 'Telepítés';
   });
-  installButton?.addEventListener('click', async () => {
-    if (!installPrompt) {
-      alert('iPhone-on: Safari → Megosztás → Főképernyőhöz adás. Androidon: Chrome menü → Alkalmazás telepítése vagy Kezdőképernyőhöz adás.');
+  button.addEventListener('click', async () => {
+    if (deferredPrompt) {
+      deferredPrompt.prompt();
+      try { await deferredPrompt.userChoice; } catch (_) {}
+      deferredPrompt = null;
+      banner.style.display = 'none';
       return;
     }
-    installPrompt.prompt();
-    await installPrompt.userChoice;
-    installPrompt = null;
-    installButton.classList.add('hidden');
+    if (isIOS) {
+      alert('iPhone-on nyisd meg a Predator Chatet a Safariban. Koppints a Megosztás gombra, majd válaszd a „Főképernyőhöz adás” lehetőséget.');
+    } else {
+      alert('Androidon Chrome-ban nyisd meg a Predator Chatet, koppints a három pontra, majd válaszd az „Alkalmazás telepítése” vagy „Hozzáadás a kezdőképernyőhöz” lehetőséget.');
+    }
   });
-  window.addEventListener('appinstalled', () => {
-    installPrompt = null;
-    installButton?.classList.add('hidden');
+  close?.addEventListener('click', () => {
+    banner.style.display = 'none';
+    sessionStorage.setItem('predatorInstallDismissed', '1');
   });
+  window.addEventListener('appinstalled', () => { banner.style.display = 'none'; });
 })();
 </script>
 
